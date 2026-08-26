@@ -22,18 +22,36 @@ GNOME_51_PACKAGES = (
     "xdg-desktop-portal-gnome",
 )
 
+NVIDIA_PACKAGES = (
+    "nvidia-driver",
+    "nvidia-driver-cuda",
+    "nvidia-container-toolkit",
+)
+
 
 def main() -> int:
     check_only = sys.argv[1] == "--check"
     manifest = Path(sys.argv[2] if check_only else sys.argv[1])
     data = tomllib.loads(manifest.read_text())
     bluefin = data["fedora"]["packages"]
-    expected = [*bluefin, *GNOME_51_PACKAGES]
-    print(f"Verifying {len(bluefin)} Bluefin packages and {len(GNOME_51_PACKAGES)} GNOME 51 packages")
+    flavor = __import__("os").environ.get("IMAGE_FLAVOR", "main")
+    nvidia = NVIDIA_PACKAGES if "nvidia" in flavor else ()
+    expected = [*bluefin, *GNOME_51_PACKAGES, *nvidia]
+    print(
+        f"Verifying {len(bluefin)} Bluefin packages, {len(GNOME_51_PACKAGES)} GNOME 51 packages"
+        f", and {len(nvidia)} NVIDIA packages"
+    )
     if check_only:
         assert len(set(expected)) == len(expected), "RPM contract contains duplicate package names"
         return 0
-    return subprocess.run(["rpm", "-qi", *expected], check=False).returncode
+    result = subprocess.run(["rpm", "-qi", *expected], check=False).returncode
+    if result or "nvidia" not in flavor:
+        return result
+    if flavor == "nvidia-gaming":
+        release = Path("/usr/lib/utah/ogc-kernel-release").read_text().strip()
+        module = Path(f"/usr/lib/modules/{release}/extra/nvidia/nvidia.ko")
+        return 0 if module.exists() else 1
+    return subprocess.run(["rpm", "-qi", "kmod-nvidia"], check=False).returncode
 
 
 if __name__ == "__main__":

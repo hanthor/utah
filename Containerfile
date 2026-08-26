@@ -9,6 +9,7 @@ FROM ${BREW_IMAGE}@${BREW_IMAGE_SHA} AS brew
 FROM ${BASE_IMAGE}
 
 ARG IMAGE_NAME=utah
+ARG IMAGE_FLAVOR=main
 ARG IMAGE_VENDOR=hanthor
 ARG VERSION=testing
 ARG SHA_HEAD_SHORT=unknown
@@ -25,11 +26,13 @@ COPY packages/tunaos-hummingbird.repo /etc/yum.repos.d/tunaos-hummingbird.repo
 COPY scripts/install-packages.py /usr/local/libexec/utah-install-packages
 COPY scripts/verify-rpm-contract.py /usr/local/libexec/utah-verify-rpm-contract
 COPY scripts/build-gnome-extensions.sh /usr/local/libexec/utah-build-gnome-extensions
+COPY scripts/install-ogc-kernel.sh /usr/local/libexec/utah-install-ogc-kernel
+COPY scripts/install-nvidia.sh /usr/local/libexec/utah-install-nvidia
 COPY --from=common /system_files/shared /tmp/utah-common
 COPY --from=brew /system_files /tmp/utah-brew
 COPY system_files/shared /tmp/utah-local
 
-RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-verify-rpm-contract /usr/local/libexec/utah-build-gnome-extensions && \
+RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-verify-rpm-contract /usr/local/libexec/utah-build-gnome-extensions /usr/local/libexec/utah-install-ogc-kernel /usr/local/libexec/utah-install-nvidia && \
     cp -a /tmp/utah-common/. / && \
     cp -a /tmp/utah-brew/. / && \
     cp -a /tmp/utah-local/. / && \
@@ -57,6 +60,19 @@ RUN DNF="$(command -v dnf5 || command -v dnf)" && \
 # build here makes GNOME 51 compatibility visible in the normal image CI path.
 RUN /usr/local/libexec/utah-build-gnome-extensions && \
     glib-compile-schemas /usr/share/glib-2.0/schemas
+
+# Dakota-compatible flavors: OGC is built and asserted before NVIDIA so the
+# NVIDIA path can bind its module to the exact kernel tree it will boot.
+RUN case "${IMAGE_FLAVOR}" in \
+      gaming|nvidia-gaming) /usr/local/libexec/utah-install-ogc-kernel ;; \
+      main|nvidia) ;; \
+      *) echo "Unknown Utah image flavor: ${IMAGE_FLAVOR}" >&2; exit 2 ;; \
+    esac && \
+    case "${IMAGE_FLAVOR}" in \
+      nvidia|nvidia-gaming) /usr/local/libexec/utah-install-nvidia "${IMAGE_FLAVOR}" ;; \
+      main|gaming) ;; \
+    esac && \
+    IMAGE_FLAVOR="${IMAGE_FLAVOR}" /usr/local/libexec/utah-verify-rpm-contract /usr/share/utah/bluefin.toml
 
 RUN bootc container lint --fatal-warnings --skip nonempty-boot
 

@@ -16,7 +16,15 @@ check:
     grep -q 'projectbluefin/actions/.github/workflows/reusable-build.yml@v1' .github/workflows/build.yml
 
 image_name base_name stream flavor:
-    @echo "{{ image }}"
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{ flavor }}" in
+      main) echo "{{ image }}" ;;
+      nvidia) echo "{{ image }}-nvidia" ;;
+      gaming) echo "{{ image }}-gaming" ;;
+      nvidia-gaming) echo "{{ image }}-nvidia-gaming" ;;
+      *) echo "unknown Utah image flavor: {{ flavor }}" >&2; exit 2 ;;
+    esac
 
 generate-default-tag stream build_number:
     @echo "{{ stream }}"
@@ -28,12 +36,14 @@ build-ghcr base_name stream flavor kernel_pin="":
     #!/usr/bin/env bash
     set -euo pipefail
     version="${stream}-$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)"
+    image_name="$(just image_name '{{ base_name }}' '{{ stream }}' '{{ flavor }}')"
     podman build \
-      --build-arg IMAGE_NAME={{ image }} \
+      --build-arg IMAGE_NAME="$image_name" \
+      --build-arg IMAGE_FLAVOR={{ flavor }} \
       --build-arg IMAGE_VENDOR={{ repo_organization }} \
       --build-arg VERSION="$version" \
       --build-arg SHA_HEAD_SHORT="$(git rev-parse --short HEAD)" \
-      --tag "localhost/{{ image }}:{{ stream }}" \
+      --tag "localhost/$image_name:{{ stream }}" \
       --file Containerfile .
 
 generate-build-tags base_name stream flavor kernel_pin build_number version event_name event_number:
@@ -47,10 +57,12 @@ tag-images image_name default_tag alias_tags:
 gen-sbom base_name stream flavor syft_cmd:
     #!/usr/bin/env bash
     set -euo pipefail
-    mkdir -p "sbom_out/{{ image }}"
-    "{{ syft_cmd }}" "localhost/{{ image }}:{{ stream }}" -o json >"sbom_out/{{ image }}/sbom.json"
+    image_name="$(just image_name '{{ base_name }}' '{{ stream }}' '{{ flavor }}')"
+    mkdir -p "sbom_out/$image_name"
+    "{{ syft_cmd }}" "localhost/$image_name:{{ stream }}" -o json >"sbom_out/$image_name/sbom.json"
 
 secureboot base_name default_tag flavor:
     #!/usr/bin/env bash
     set -euo pipefail
-    podman run --rm --entrypoint /bin/sh "localhost/{{ image }}:{{ default_tag }}" -c 'test -e /usr/lib/modules || test -e /boot'
+    image_name="$(just image_name '{{ base_name }}' '{{ default_tag }}' '{{ flavor }}')"
+    podman run --rm --entrypoint /bin/sh "localhost/$image_name:{{ default_tag }}" -c 'test -e /usr/lib/modules || test -e /boot'

@@ -3,7 +3,7 @@ name: Build Utah
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [testing]
   schedule:
     - cron: "20 22 * * *"
   workflow_dispatch:
@@ -25,7 +25,8 @@ jobs:
       security-events: write
     with:
       brand_name: utah
-      image_flavors: '["main"]'
+      image_flavors: '["main", "nvidia", "gaming", "nvidia-gaming"]'
       stream_name: testing
       architecture: '["x86_64"]'
-      publish_stream_tag: "true"
+      # Testing is advanced only after post-testing-e2e validates the build.
+      publish_stream_tag: "false"
