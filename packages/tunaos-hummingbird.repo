@@ -1,0 +1,8 @@
+[tunaos-hummingbird]
+name=TunaOS Hummingbird packages
+baseurl=https://repo.tunaos.org/hummingbird/20251124-$basearch/
+enabled=1
+gpgcheck=1
+gpgkey=https://repo.tunaos.org/public.gpg
+repo_gpgcheck=0
+priority=5
