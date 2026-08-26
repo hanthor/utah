@@ -23,6 +23,7 @@ jobs:
       id-token: write
       attestations: write
       security-events: write
+      issues: write
     with:
       brand_name: utah
       image_flavors: '["main", "nvidia", "gaming", "nvidia-gaming"]'
