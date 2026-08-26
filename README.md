@@ -10,6 +10,9 @@ on Fedora Hummingbird, with the GNOME 51 stack supplied by
 - Pinned Hummingbird `bootc-os` base, preserving its hardened and fast-moving
   upstream model.
 - Bluefin's base package manifest is the compatibility contract.
+- Bluefin's pinned `projectbluefin/common` and `ublue-os/brew` OCI payloads,
+  plus its GNOME Extensions submodules, are retained with their normal build
+  step.
 - TunaOS's Hummingbird RPM repository is enabled at higher priority to provide
   the newer GNOME 51 packages.
 - CI delegates builds, vulnerability reporting, SBOMs, keyless signatures,

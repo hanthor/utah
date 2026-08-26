@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 import sys
 import tomllib
@@ -26,7 +27,10 @@ def main() -> int:
     if args.check:
         print(f"validated {len(selected)} Bluefin parity packages")
         return 0
-    return subprocess.run(["dnf5", "-y", "install", *selected], check=False).returncode
+    dnf = shutil.which("dnf5") or shutil.which("dnf")
+    if not dnf:
+        raise RuntimeError("Hummingbird base does not provide dnf or dnf5")
+    return subprocess.run([dnf, "-y", "install", *selected], check=False).returncode
 
 
 if __name__ == "__main__":
