@@ -35,7 +35,7 @@ setup-cache base_name stream build_number event_name:
 build-ghcr base_name stream flavor kernel_pin="":
     #!/usr/bin/env bash
     set -euo pipefail
-    version="${stream}-$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)"
+    version="{{ stream }}-$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)"
     image_name="$(just image_name '{{ base_name }}' '{{ stream }}' '{{ flavor }}')"
     podman build \
       --build-arg IMAGE_NAME="$image_name" \
