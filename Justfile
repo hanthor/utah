@@ -36,7 +36,13 @@ build-ghcr base_name stream flavor kernel_pin="":
     #!/usr/bin/env bash
     set -euo pipefail
     version="{{ stream }}-$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)"
-    image_name="$(just image_name '{{ base_name }}' '{{ stream }}' '{{ flavor }}')"
+    case "{{ flavor }}" in
+      main) image_name="{{ image }}" ;;
+      nvidia) image_name="{{ image }}-nvidia" ;;
+      gaming) image_name="{{ image }}-gaming" ;;
+      nvidia-gaming) image_name="{{ image }}-nvidia-gaming" ;;
+      *) echo "unknown Utah image flavor: {{ flavor }}" >&2; exit 2 ;;
+    esac
     podman build \
       --build-arg IMAGE_NAME="$image_name" \
       --build-arg IMAGE_FLAVOR={{ flavor }} \
