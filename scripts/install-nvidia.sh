@@ -191,7 +191,9 @@ sh "$run_path" --silent --no-kernel-module --no-nouveau-check \
 # OS libraries Hummingbird already has. See packages/nvidia-container.repo.
 "$DNF" -y install nvidia-container-toolkit
 
-install -d /usr/lib/bootc/kargs.d /usr/lib/modprobe.d
+# /usr/lib/utah is created by install-ogc-kernel.sh, but that only runs on the
+# gaming flavors, so on plain nvidia nothing has made it yet.
+install -d /usr/lib/bootc/kargs.d /usr/lib/modprobe.d /usr/lib/utah
 printf '%s\n' 'blacklist nouveau' 'options nouveau modeset=0' >/usr/lib/modprobe.d/00-nouveau-blacklist.conf
 printf '%s\n' 'kargs = ["rd.driver.blacklist=nouveau", "modprobe.blacklist=nouveau", "nvidia-drm.modeset=1"]' >/usr/lib/bootc/kargs.d/00-nvidia.toml
 printf '%s\n' "$driver_version" >/usr/lib/utah/nvidia-driver-version
