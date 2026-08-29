@@ -48,7 +48,7 @@ def main() -> int:
     expected = [*bluefin, *gnome, *nvidia]
 
     print(
-        f"Verifying {len(bluefin)} Bluefin packages, {len(gnome)} GNOME 51 packages"
+        f"Verifying {len(bluefin)} Bluefin packages, {len(gnome)} GNOME desktop packages"
         f", and {len(nvidia)} NVIDIA packages",
         flush=True,
     )

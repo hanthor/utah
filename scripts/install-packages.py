@@ -14,7 +14,12 @@ import sys
 import tomllib
 from pathlib import Path
 
-REPO = "fedora-rawhide"
+# Hummingbird plus Fedora 44, the pairing Hummingbird composes its own
+# buildroot from. NOT the rolling Rawhide: Rawhide has moved to OpenSSL 4
+# while the Hummingbird base pins 3.5.6, so a Rawhide desktop stack is
+# unresolvable here -- 38 packages in this contract's closure need
+# libcrypto.so.4, including boot-critical ones.
+REPOS = ("public-hummingbird-x86_64-rpms", "fedora-44", "fedora-44-updates")
 
 
 def section(path: Path, name: str) -> list[str]:
@@ -98,7 +103,7 @@ def main() -> int:
         if overlap:
             raise ValueError(f"[unavailable] packages still in install set: {overlap}")
         print(f"validated {len(packages)} Bluefin parity packages")
-        print(f"documented as unavailable on Rawhide: {len(unavailable)}")
+        print(f"documented as unavailable: {len(unavailable)}")
         return 0
 
     dnf = dnf_path()
@@ -115,7 +120,8 @@ def main() -> int:
     # Bluefin excludes PackageKit from its bulk install; an image-based system
     # must not carry a second package manager that can write to /usr.
     rc = run(
-        dnf, "-y", f"--disablerepo=*", f"--enablerepo={REPO}",
+        dnf, "-y", "--disablerepo=*",
+        *(f"--enablerepo={r}" for r in REPOS),
         "-x", "PackageKit*", "install", *packages, *build_deps,
     )
     if rc:

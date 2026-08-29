@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Check the package contract against Fedora Rawhide before building an image.
+"""Check the package contract against the repositories Utah actually installs from.
 
-Every package Utah claims parity on is looked up in Rawhide's repodata.  A
-package that is neither available nor listed under [unavailable] in
+Every package Utah claims parity on is looked up in the repodata of the same
+repositories the image build enables: Hummingbird's own overlay and Fedora 44.
+A package that is neither available nor listed under [unavailable] in
 packages/utah.toml fails here, in the seconds-long preflight job, instead of
 twenty minutes into a container build.
 
-This is how the pipewire-libs-extra breakage was found: it is a negativo17
-fedora-multimedia subpackage that Bluefin installs from that repo, and
-negativo17 publishes no Rawhide branch.
+Checking Rawhide instead would be actively misleading: Rawhide has moved to
+OpenSSL 4 while the Hummingbird base pins 3.5.6, so a package being present
+in Rawhide says nothing about whether Utah can install it.
 """
 
 from __future__ import annotations
@@ -22,10 +23,13 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-RAWHIDE = (
-    "https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide"
-    "/Everything/x86_64/os/"
-)
+# The same repositories packages/hummingbird.repo and packages/fedora-44.repo
+# put into the image, in the same precedence order.
+REPOS = {
+    "public-hummingbird": "https://packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/",
+    "fedora-44": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/",
+    "fedora-44-updates": "https://dl.fedoraproject.org/pub/fedora/linux/updates/44/Everything/x86_64/",
+}
 
 
 def section(path: Path, name: str) -> list[str]:
@@ -38,8 +42,8 @@ def fetch(url: str) -> bytes:
         return response.read()
 
 
-def rawhide_package_names() -> set[str]:
-    repomd = ET.fromstring(fetch(RAWHIDE + "repodata/repomd.xml"))
+def repo_package_names(base: str) -> set[str]:
+    repomd = ET.fromstring(fetch(base + "repodata/repomd.xml"))
     ns = {"repo": "http://linux.duke.edu/metadata/repo"}
     href = next(
         location.get("href")
@@ -47,7 +51,7 @@ def rawhide_package_names() -> set[str]:
         if data.get("type") == "primary"
         for location in data.findall("repo:location", ns)
     )
-    raw = fetch(RAWHIDE + href)
+    raw = fetch(base + href)
     if href.endswith(".zst"):
         try:
             import zstandard
@@ -86,17 +90,20 @@ def main() -> int:
         | set(section(overlay, "gnome"))
         | set(section(overlay, "build"))
     )
-    names = rawhide_package_names()
-    print(f"Fedora Rawhide publishes {len(names)} binary packages")
+    names: set[str] = set()
+    for label, base in REPOS.items():
+        found = repo_package_names(base)
+        print(f"{label}: {len(found)} binary packages")
+        names |= found
 
     missing = [pkg for pkg in wanted if pkg not in names and pkg not in unavailable]
     resolved = sorted(pkg for pkg in unavailable if pkg in names)
 
     for pkg in resolved:
-        print(f"NOTE: {pkg} is now in Rawhide and can be removed from [unavailable]")
+        print(f"NOTE: {pkg} is now available and can be removed from [unavailable]")
     if missing:
         print(
-            f"ERROR: {len(missing)} contract packages are not in Fedora Rawhide.",
+            f"ERROR: {len(missing)} contract packages are in none of the configured repositories.",
             file=sys.stderr,
         )
         print(
@@ -108,8 +115,8 @@ def main() -> int:
             print(f"  - {pkg}", file=sys.stderr)
         return 1
     print(
-        f"All {len(wanted) - len(unavailable)} contract packages are available in "
-        f"Rawhide ({len(unavailable)} documented as unavailable)."
+        f"All {len(wanted) - len(unavailable)} contract packages are available "
+        f"({len(unavailable)} documented as unavailable)."
     )
     return 0
 

@@ -1,0 +1,26 @@
+# Fedora 44, not the rolling Rawhide. Hummingbird pins its rawhide variant to
+# Fedora 44 (images/variables.yml, default_variant_repos.rawhide), and F44
+# carries OpenSSL 3.5.5 -- libcrypto.so.3, the ABI the Hummingbird base has.
+# Rawhide is three releases ahead on OpenSSL 4 and its packages cannot be
+# installed here at all.
+[fedora-44]
+name=Fedora 44 - $basearch
+baseurl=https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/$basearch/os/
+enabled=1
+metadata_expire=6h
+repo_gpgcheck=0
+type=rpm
+gpgcheck=1
+gpgkey=https://fedoraproject.org/fedora.gpg
+skip_if_unavailable=False
+
+[fedora-44-updates]
+name=Fedora 44 - $basearch - Updates
+baseurl=https://dl.fedoraproject.org/pub/fedora/linux/updates/44/Everything/$basearch/
+enabled=1
+metadata_expire=6h
+repo_gpgcheck=0
+type=rpm
+gpgcheck=1
+gpgkey=https://fedoraproject.org/fedora.gpg
+skip_if_unavailable=False

@@ -33,8 +33,8 @@ jobs:
         run: just check
       - name: Check Bluefin parity
         run: just check-parity
-      - name: Check Rawhide package availability
-        run: just check-rawhide
+      - name: Check package availability in Utah's repositories
+        run: just check-repos
 
   build:
     needs: contract

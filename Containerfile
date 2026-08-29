@@ -23,8 +23,8 @@ LABEL containers.bootc=1
 
 COPY packages/bluefin.toml /usr/share/utah/bluefin.toml
 COPY packages/utah.toml /usr/share/utah/utah.toml
-COPY packages/tunaos-hummingbird.repo /etc/yum.repos.d/tunaos-hummingbird.repo
-COPY packages/fedora-rawhide.repo /etc/yum.repos.d/fedora-rawhide.repo
+COPY packages/hummingbird.repo /etc/yum.repos.d/hummingbird.repo
+COPY packages/fedora-44.repo /etc/yum.repos.d/fedora-44.repo
 COPY scripts/install-packages.py /usr/local/libexec/utah-install-packages
 COPY scripts/verify-rpm-contract.py /usr/local/libexec/utah-verify-rpm-contract
 COPY scripts/build-gnome-extensions.sh /usr/local/libexec/utah-build-gnome-extensions
@@ -41,7 +41,8 @@ RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-
     rm -rf /tmp/utah-common /tmp/utah-brew /tmp/utah-local
 
 # Utah keeps Bluefin's user-facing package contract.  Hummingbird supplies the
-# bootable base; Fedora Rawhide supplies the complete desktop dependency graph.
+# bootable base; Hummingbird's own repository plus Fedora 44 supply the rest,
+# which is the pairing Hummingbird composes its own buildroot from.
 # A missing package is a build failure: silently skipping one would make parity
 # claims meaningless.  The only exceptions are the packages listed under
 # [unavailable] in packages/utah.toml, each of which carries a tracking issue.
