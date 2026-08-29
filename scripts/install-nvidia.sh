@@ -165,13 +165,21 @@ build_module() {
   else
     test -d "$tree"
     ensure_source
-    # The compile was serial, which cost minutes per kernel for no reason.
-    make -j"$(nproc)" -C "$tree" M=/tmp/nvidia-source/kernel-open modules
+    # Drive NVIDIA own Makefile rather than the kernel build system directly.
+    # `make -C "$tree" M=kernel-open modules` looks equivalent and is not: the
+    # list of modules to build lives in NV_KERNEL_MODULES, which that Makefile
+    # computes and passes down along with NV_KERNEL_SOURCES, ARCH and the
+    # toolchain variables. Without them obj-m is empty, so Kbuild compiles
+    # nothing, runs MODPOST over an empty set, and exits 0. That is exactly
+    # what happened: every earlier run logged a successful build and produced
+    # an empty extra/nvidia directory, which was then archived into the cache
+    # and unpacked, just as empty, on the other side.
+    make -j"$(nproc)" -C /tmp/nvidia-source/kernel-open modules SYSSRC="$tree"
     install -d "/usr/lib/modules/${release}/extra/nvidia"
     find /tmp/nvidia-source/kernel-open -name 'nvidia*.ko' \
       -exec install -m0644 -t "/usr/lib/modules/${release}/extra/nvidia" {} +
     # Leave the tree clean so the next kernel does not link against these.
-    make -C "$tree" M=/tmp/nvidia-source/kernel-open clean
+    make -C /tmp/nvidia-source/kernel-open clean SYSSRC="$tree"
   fi
   # Assert the module actually landed. Both flavors reached the contract check
   # reporting the module missing for every kernel, after logging a clean unpack
