@@ -1,0 +1,39 @@
+name: Post-Testing E2E
+
+on:
+  workflow_run:
+    workflows: ["Build Utah"]
+    types: [completed]
+    branches: [testing]
+
+permissions: read-all
+
+jobs:
+  promote-to-testing:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'testing'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      actions: read
+    steps:
+      - name: Download all flavor digests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "${{ github.event.workflow_run.id }}" --repo "${{ github.repository }}" --pattern 'image-digest-testing-*' --dir /tmp/digests
+      - name: Promote verified images to testing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REGISTRY: ghcr.io/${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          echo "$GH_TOKEN" | skopeo login ghcr.io --username "${{ github.actor }}" --password-stdin
+          count=0
+          while IFS='=' read -r name digest; do
+            [[ -n "$name" && "$digest" == sha256:* ]] || continue
+            skopeo copy --all "docker://${REGISTRY}/${name}@${digest}" "docker://${REGISTRY}/${name}:testing"
+            count=$((count + 1))
+          done < <(find /tmp/digests -name '*.txt' -exec cat {} +)
+          test "$count" -eq 4

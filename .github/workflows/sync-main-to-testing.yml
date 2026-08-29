@@ -1,0 +1,14 @@
+name: Sync main to testing
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    uses: projectbluefin/actions/.github/workflows/reusable-sync-branches.yml@v1
+    permissions:
+      contents: write
