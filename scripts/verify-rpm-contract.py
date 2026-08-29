@@ -14,11 +14,16 @@ import sys
 import tomllib
 from pathlib import Path
 
-NVIDIA_PACKAGES = (
-    "nvidia-driver",
-    "nvidia-driver-cuda",
-    "nvidia-container-toolkit",
-)
+# The NVIDIA userspace no longer arrives as RPMs. UBlue's akmods bundle used to
+# supply nvidia-driver, nvidia-driver-cuda and nvidia-container-toolkit, but it
+# publishes nothing for Hummingbird's kernel, so install-nvidia.sh builds the
+# open module from NVIDIA's own source and installs the matching userspace from
+# the same payload. Those files are what the image needs; the RPM names were
+# only ever how they happened to arrive.
+#
+# nvidia-container-toolkit is a real loss rather than a renaming: it has no
+# source configured here at all, so container GPU access is not available.
+NVIDIA_PACKAGES: tuple[str, ...] = ()
 
 
 def section(path: Path, name: str) -> list[str]:
@@ -83,16 +88,28 @@ def main() -> int:
 
     if "nvidia" not in flavor:
         return 0
+
+    # Assert what a source build actually produces: a module for every kernel
+    # the image can boot, and the userspace that goes with it.
+    releases = [subprocess.run(["rpm", "-q", "kernel", "--qf", "%{VERSION}-%{RELEASE}.%{ARCH}\n"],
+                               capture_output=True, text=True).stdout.split()[-1]]
     if flavor == "nvidia-gaming":
-        release = Path("/usr/lib/utah/ogc-kernel-release").read_text().strip()
+        releases.append(Path("/usr/lib/utah/ogc-kernel-release").read_text().strip())
+
+    failed = False
+    for release in releases:
         module = Path(f"/usr/lib/modules/{release}/extra/nvidia/nvidia.ko")
         if not module.exists():
-            print(f"ERROR: NVIDIA module missing for OGC kernel {release}", file=sys.stderr)
-            return 1
-        return 0
-    if not is_installed("kmod-nvidia"):
-        print("ERROR: kmod-nvidia is not installed", file=sys.stderr)
+            print(f"ERROR: NVIDIA module missing for kernel {release}", file=sys.stderr)
+            failed = True
+    for path in (Path("/usr/bin/nvidia-smi"), Path("/usr/lib/utah/nvidia-driver-version")):
+        if not path.exists():
+            print(f"ERROR: NVIDIA userspace incomplete, {path} is missing", file=sys.stderr)
+            failed = True
+    if failed:
         return 1
+    version = Path("/usr/lib/utah/nvidia-driver-version").read_text().strip()
+    print(f"NVIDIA {version} present for: {', '.join(releases)}")
     return 0
 
 

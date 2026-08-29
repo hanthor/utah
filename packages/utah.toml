@@ -72,3 +72,12 @@ packages = [
 packages = [
     "pipewire-libs-extra",
 ]
+
+# nvidia-container-toolkit is a second, newer gap, recorded here rather than in
+# the list above because it is not part of the Bluefin [fedora] contract -- it
+# came from UBlue's akmods bundle, which the nvidia flavors can no longer use.
+# UBlue publishes akmods per exact kernel NEVR and builds none for
+# Hummingbird's 7.1.8-100.fc43, so install-nvidia.sh now builds the module from
+# NVIDIA's own source. That payload supplies the driver and its userspace but
+# not the container toolkit, so container GPU access is unavailable on the
+# nvidia flavors until a source for it exists.
