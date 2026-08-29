@@ -26,8 +26,10 @@ if [ -f "${CACHE_DIR}/ogc.tar" ]; then
   depmod -a "$release"
   ln -sfn "vmlinuz-${release}" /boot/vmlinuz
   test -s /usr/lib/utah/ogc-kernel-release
-  grep -qx 'CONFIG_SCHED_CLASS_EXT=y' /usr/lib/utah/ogc-kernel.config
-  grep -Eq '^CONFIG_NTSYNC=(y|m)$' /usr/lib/utah/ogc-kernel.config
+  for want in '^CONFIG_SCHED_CLASS_EXT=y$' '^CONFIG_NTSYNC=(y|m)$' '^CONFIG_ANDROID_BINDERFS=y$'; do
+    grep -Eq "$want" /usr/lib/utah/ogc-kernel.config || {
+      echo "cached OGC config does not satisfy $want" >&2; exit 1; }
+  done
   exit 0
 fi
 
@@ -63,9 +65,48 @@ if [ "$actual_commit" != "$OGC_COMMIT" ]; then
   exit 1
 fi
 make defconfig
-scripts/config --enable SCHED_CLASS_EXT --enable NTSYNC --enable ANDROID_BINDERFS
+# Each of these three needs its dependencies enabled too, or olddefconfig drops
+# it again without a word:
+#
+#   SCHED_CLASS_EXT depends on BPF_SYSCALL && BPF_JIT && DEBUG_INFO_BTF
+#   DEBUG_INFO_BTF  depends on BPF_SYSCALL, !DEBUG_INFO_REDUCED, pahole >= 1.22,
+#                   and on DEBUG_INFO, which is not settable directly -- it is
+#                   selected by picking a DWARF format out of a choice whose
+#                   default is DEBUG_INFO_NONE
+#   ANDROID_BINDERFS depends on ANDROID_BINDER_IPC, which is default n
+#
+# x86_64 defconfig has none of them, so asking only for the three features got
+# all three silently discarded: no sched_ext for the gaming scheduler, and no
+# binderfs. Enabling DEBUG_INFO makes the build slower and the tree much larger,
+# which is the price of BTF; the kernel that ships is unaffected, since only
+# bzImage is installed and modules go through INSTALL_MOD_STRIP=1.
+scripts/config --enable BPF_SYSCALL --enable BPF_JIT \
+               --disable DEBUG_INFO_NONE \
+               --enable DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT \
+               --enable DEBUG_INFO_BTF \
+               --enable SCHED_CLASS_EXT \
+               --enable ANDROID_BINDER_IPC --enable ANDROID_BINDERFS \
+               --enable NTSYNC
 scripts/config --set-str LOCALVERSION "-ogc1" --disable LOCALVERSION_AUTO
 make olddefconfig
+
+# Check the config the moment it is settled, not after the compile. The build
+# below takes about half an hour, and these options are the only reason this
+# kernel exists rather than Fedora's -- discovering afterwards that one of them
+# is missing wastes the whole run. `scripts/config --enable` writes the line
+# whether or not the option is reachable; olddefconfig is what decides.
+require_config() {
+  if ! grep -Eq "$1" .config; then
+    echo "OGC kernel: olddefconfig dropped $2. Related settings:" >&2
+    grep -E "^# ?CONFIG_(SCHED_CLASS_EXT|NTSYNC|ANDROID_BINDER|DEBUG_INFO|BPF_SYSCALL|BPF_JIT)" .config >&2 || true
+    grep -E "^CONFIG_(SCHED_CLASS_EXT|NTSYNC|ANDROID_BINDER|DEBUG_INFO|BPF_SYSCALL|BPF_JIT)" .config >&2 || true
+    exit 1
+  fi
+}
+require_config '^CONFIG_SCHED_CLASS_EXT=y$' CONFIG_SCHED_CLASS_EXT
+require_config '^CONFIG_NTSYNC=(y|m)$' CONFIG_NTSYNC
+require_config '^CONFIG_ANDROID_BINDERFS=y$' CONFIG_ANDROID_BINDERFS
+
 make modules_prepare
 make -j"$(nproc)" bzImage modules
 release="$(make -s kernelrelease)"
@@ -100,6 +141,11 @@ if [ "${#absent[@]}" -gt 0 ]; then
   "$DNF" -y remove "${absent[@]}"
 fi
 "$DNF" clean all
+# The same three, re-checked against what was actually installed. These cannot
+# fail once the pre-build check passes, which is the point: a failure here would
+# mean the config that shipped is not the config that was built.
 test -s /usr/lib/utah/ogc-kernel-release
-grep -qx 'CONFIG_SCHED_CLASS_EXT=y' /usr/lib/utah/ogc-kernel.config
-grep -Eq '^CONFIG_NTSYNC=(y|m)$' /usr/lib/utah/ogc-kernel.config
+for want in '^CONFIG_SCHED_CLASS_EXT=y$' '^CONFIG_NTSYNC=(y|m)$' '^CONFIG_ANDROID_BINDERFS=y$'; do
+  grep -Eq "$want" /usr/lib/utah/ogc-kernel.config || {
+    echo "installed OGC config does not satisfy $want" >&2; exit 1; }
+done
