@@ -66,10 +66,16 @@ if [ "$actual_commit" != "$OGC_COMMIT" ]; then
 fi
 # A shallow clone does not fetch the tag object, so scripts/setlocalversion
 # decides the tree is not at a release and appends "+" -- the kernel came out as
-# 7.1.8-ogc1+, which reads as a modified tree. It is not modified: the commit is
-# checked against the pin immediately above. An empty .scmversion suppresses the
-# suffix without pretending the tree is something it is not.
-: > .scmversion
+# 7.1.8-ogc1+, which reads as a modified tree. It is not: the commit is checked
+# against the pin immediately above.
+#
+# An empty .scmversion was tried for this and did not work; the kernel still
+# built as 7.1.8-ogc1+. setlocalversion only appends the plus when the
+# LOCALVERSION *environment variable* is unset --
+#     elif [ "${LOCALVERSION+set}" != "set" ]; then
+# -- so exporting it empty is what actually suppresses it. CONFIG_LOCALVERSION
+# in .config is a different thing and still supplies the -ogc1.
+export LOCALVERSION=
 
 make defconfig
 # Each of these three needs its dependencies enabled too, or olddefconfig drops
@@ -124,8 +130,29 @@ install -Dm0644 .config "/usr/lib/modules/${release}/config"
 # Preserve the minimal external-module build tree.  NVIDIA's open module is
 # compiled against this exact tree for the nvidia-gaming flavor.
 kernel_build="/usr/src/linux-${release}"
-install -d "$kernel_build"
-cp -a Makefile Module.symvers .config arch/x86 include scripts "$kernel_build/"
+install -d "$kernel_build/arch"
+cp -a Makefile Module.symvers .config include scripts "$kernel_build/"
+# arch/x86 needs its own copy, into an arch/ that exists. Listing it beside the
+# others put it at $kernel_build/x86, because cp names the destination after the
+# last path component when the parent is absent -- so arch/x86/Makefile was not
+# there, and the NVIDIA module build against this tree died on
+#   No rule to make target /usr/src/linux-.../arch/x86/Makefile
+cp -a arch/x86 "$kernel_build/arch/"
+# objtool is run for external modules whenever CONFIG_OBJTOOL is set, and it
+# lives outside every directory copied above.
+if grep -qx "CONFIG_OBJTOOL=y" .config; then
+  install -d "$kernel_build/tools/objtool"
+  cp -a tools/objtool/. "$kernel_build/tools/objtool/"
+fi
+# An incomplete tree does not fail here, it fails later inside an unrelated
+# module build, as a missing path with no hint of which copy left it out.
+for need in Makefile Module.symvers .config arch/x86/Makefile include scripts; do
+  test -e "$kernel_build/$need" || {
+    echo "OGC external-module build tree is missing $need" >&2
+    find "$kernel_build" -maxdepth 2 >&2
+    exit 1
+  }
+done
 ln -sfn "$kernel_build" "/usr/lib/modules/${release}/build"
 depmod -a "$release"
 install -Dm0644 .config /usr/lib/utah/ogc-kernel.config
