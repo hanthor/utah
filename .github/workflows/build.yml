@@ -38,6 +38,21 @@ jobs:
         run: just check-parity
       - name: Check package availability in Utah's repositories
         run: just check-repos
+      # config/flavors.json is the single source for the build, promote and
+      # release matrices. It used to be four literals in three files, which is
+      # one place to narrow the set and three places to forget.
+      - name: Resolve the image flavors
+        id: flavors
+        run: |
+          set -euo pipefail
+          LIST="$(python3 scripts/flavors.py list)"
+          # An empty output here does not fail loudly, it produces an invalid
+          # matrix in the reusable workflow: no image job is created at all and
+          # the only symptom is "build_container: failure" from the aggregator.
+          test -n "$LIST" && [ "$LIST" != "[]" ]
+          echo "list=$LIST" >> "$GITHUB_OUTPUT"
+          echo "needs_kernel=$(python3 scripts/flavors.py needs-kernel)" >> "$GITHUB_OUTPUT"
+          echo "building $LIST"
 
   # The OGC kernel compile and the NVIDIA module build depend only on the base
   # image and on the two scripts that perform them, so they are hoisted out of

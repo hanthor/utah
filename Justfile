@@ -29,6 +29,8 @@ check:
          <(grep -m1 '^ARG BASE_IMAGE=' Containerfile.kernel)
     python3 -m py_compile scripts/flavors.py
     python3 scripts/flavors.py list >/dev/null
+    pip install --quiet pyyaml 2>/dev/null || true
+    python3 scripts/check_workflow_outputs.py
     # No workflow may carry its own copy of the flavor list. That drift is what
     # config/flavors.json exists to stop: narrowing the build matrix while
     # promote and release still name images nothing produces fails late.
