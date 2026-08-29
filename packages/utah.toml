@@ -89,3 +89,23 @@ packages = [
 # and verify-rpm-contract.py asserts it by name. Container GPU access is not
 # lost. The driver and its userspace still arrive as files from the .run payload
 # rather than as RPMs, which is why only this one name is asserted.
+#
+# On CUDA, which was considered and deliberately not included.
+#
+# NVIDIA publishes a CUDA repository with a fedora44 directory, so it is
+# available. Measured from its metadata rather than guessed: the cuda-toolkit
+# closure is 65 packages, 3.97 GB to download and 7.68 GB installed. This image
+# is a few GB, so that multiplies it, in every pull and every layer, and it has
+# to survive an OCI export and a rechunk on a runner that already needed disk
+# freed for the kernel build.
+#
+# The full `cuda` metapackage is worse and is not even installable here: it
+# requires kmod-nvidia-open-dkms, nvidia-driver-libs, nvidia-driver-common and
+# dkms, which are RPM names this image does not have, because the driver arrives
+# from the .run payload as files.
+#
+# The right home for CUDA on an image like this is a container, which is exactly
+# what the toolkit above makes possible: `podman run --device nvidia.com/gpu=all`
+# against one of NVIDIA CUDA images gets the full toolkit with GPU access and
+# nothing in the base image. That is a better answer than 7.68 GB of it baked in,
+# so this stays out unless someone asks for it with that trade-off in view.
