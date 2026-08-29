@@ -9,6 +9,28 @@
 #   [gnome]        GNOME 51 desktop contract Hummingbird does not ship
 #   [build]        toolchain needed to build the pinned GNOME extensions
 #   [unavailable]  Bluefin contract packages with no Fedora Rawhide source
+#
+# On [multimedia_overrides], which Utah deliberately does not install:
+#
+#   Those twelve entries -- mesa-libGL, mesa-vulkan-drivers, libva,
+#   intel-mediasdk, libheif and friends -- are not extra packages. They are the
+#   same package names Fedora already ships, which Bluefin *replaces* with
+#   negativo17 builds by enabling fedora-multimedia. Utah does not enable that
+#   repository, so it installs Fedora's builds of those names instead. Nothing
+#   is missing from the image; what differs is which build of them it carries,
+#   and the practical consequence is hardware-accelerated codec support.
+#
+#   This is why they are absent from the contract rather than listed under
+#   [unavailable]: [unavailable] means "no source provides this name at all",
+#   which is true of pipewire-libs-extra and false of these. Recording them as
+#   missing would be wrong, and recording them as satisfied would hide a real
+#   functional difference from Bluefin.
+#
+#   The factory is already building several of them for Hummingbird --
+#   intel-gmmlib, intel-mediasdk, intel-vpl-gpu-rt, libheif and libva all built
+#   in hanthor/hummingbird-github. When that overlay is published and enabled
+#   here, it becomes the source that negativo17 is for Bluefin, and these can
+#   move into the contract as a version assertion rather than a name one.
 
 [gnome]
 # Hummingbird supplies the bootable base but not a desktop.  Fedora Rawhide

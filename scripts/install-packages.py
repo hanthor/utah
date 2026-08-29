@@ -112,7 +112,18 @@ def main() -> int:
     build_deps = section(overlay, "build")
     excluded = section(args.manifest, "excluded")
 
-    print(f"Fedora Rawhide is release {major}", flush=True)
+    # Record exactly what this run resolved, so the contract check asserts the
+    # set that was actually asked for rather than recomputing it and drifting.
+    # It drifted: install adds [fedora_v<major>] and the verifier never did, so
+    # on the Fedora 44 base gnupg2-scdaemon was installed and never checked.
+    resolved = Path("/usr/share/utah/contract.txt")
+    try:
+        resolved.parent.mkdir(parents=True, exist_ok=True)
+        resolved.write_text("".join(f"{pkg}\n" for pkg in packages))
+    except OSError as error:
+        print(f"WARNING: could not record the resolved contract: {error}")
+
+    print(f"Fedora release is {major}", flush=True)
     for pkg in section(overlay, "unavailable"):
         # Loud, not silent: a parity gap the operator should see in the log.
         print(f"NOTE: {pkg} has no Rawhide source and is skipped (see packages/utah.toml)")

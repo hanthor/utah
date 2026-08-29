@@ -42,8 +42,22 @@ def main() -> int:
 
     flavor = os.environ.get("IMAGE_FLAVOR", "main")
     unavailable = set(section(overlay, "unavailable"))
-    bluefin = [p for p in section(args.manifest, "fedora") if p not in unavailable]
-    gnome = section(overlay, "gnome")
+
+    # Prefer the set install-packages.py actually resolved. Recomputing it here
+    # is what let the two drift: install adds [fedora_v<major>] for the running
+    # release and this check never did, so on the Fedora 44 base
+    # gnupg2-scdaemon was installed but never verified -- it could have gone
+    # missing silently. The file is written by the install step, so in an image
+    # build it is always present; the manifest path below is the off-image
+    # fallback for --check, which asserts nothing about installation.
+    resolved = Path("/usr/share/utah/contract.txt")
+    if resolved.exists():
+        contract = [line for line in resolved.read_text().split() if line]
+        bluefin = [p for p in contract if p not in set(section(overlay, "gnome"))]
+        gnome = [p for p in contract if p in set(section(overlay, "gnome"))]
+    else:
+        bluefin = [p for p in section(args.manifest, "fedora") if p not in unavailable]
+        gnome = section(overlay, "gnome")
     nvidia = list(NVIDIA_PACKAGES) if "nvidia" in flavor else []
     expected = [*bluefin, *gnome, *nvidia]
 
