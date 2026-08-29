@@ -128,7 +128,18 @@ if [ ! -d "$build_tree" ]; then
   exit 1
 fi
 
-"$DNF" -y install gcc make kmod
+# Track which of these the image did not already have, the same way
+# install-ogc-kernel.sh does. The unconditional removal this used to end with
+# took out gcc, gcc-c++ and make on nvidia-gaming even though all three are in
+# the package contract, because they were already installed and were never ours
+# to remove.
+nvidia_toolchain=(gcc make kmod)
+nvidia_absent=()
+for pkg in "${nvidia_toolchain[@]}"; do
+  rpm -q "$pkg" >/dev/null 2>&1 || nvidia_absent+=("$pkg")
+done
+
+"$DNF" -y install "${nvidia_toolchain[@]}"
 
 if [ -f "${CACHE_DIR}/nvidia-installer.run" ]; then
   run_path="${CACHE_DIR}/nvidia-installer.run"
@@ -205,5 +216,13 @@ if [[ "$flavor" == nvidia-gaming ]]; then
 fi
 
 rm -rf "/tmp/${run}" /tmp/nvidia-source
-"$DNF" -y remove gcc make ${installed_kernel_devel:+"$installed_kernel_devel"}
+# kernel-devel is always ours: nothing else in the image asks for it, and the
+# block above records whether this script is what installed it.
+nvidia_drop=("${nvidia_absent[@]}")
+if [ -n "$installed_kernel_devel" ]; then
+  nvidia_drop+=("$installed_kernel_devel")
+fi
+if [ "${#nvidia_drop[@]}" -gt 0 ]; then
+  "$DNF" -y remove "${nvidia_drop[@]}"
+fi
 "$DNF" clean all
