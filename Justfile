@@ -27,6 +27,12 @@ check:
     # boots.  Two literals, one invariant, so assert it rather than trust it.
     diff <(grep -m1 '^ARG BASE_IMAGE=' Containerfile) \
          <(grep -m1 '^ARG BASE_IMAGE=' Containerfile.kernel)
+    python3 -m py_compile scripts/flavors.py
+    python3 scripts/flavors.py list >/dev/null
+    # No workflow may carry its own copy of the flavor list. That drift is what
+    # config/flavors.json exists to stop: narrowing the build matrix while
+    # promote and release still name images nothing produces fails late.
+    ! grep -rn 'utah-nvidia\|utah-gaming' .github/workflows/
 
 # Fail fast when a contract package is in none of the repositories the image
 # actually enables, instead of discovering it twenty minutes into a build.

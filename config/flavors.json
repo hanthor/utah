@@ -1,0 +1,8 @@
+{
+  "flavors": ["main"],
+  "retired": {
+    "nvidia": "No kernel-devel for the pinned base kernel until the NVIDIA source build is proven; nvidia-container-toolkit also has no source here.",
+    "gaming": "Waiting on the GNOME 51 overlay; the OGC kernel build works but costs ~45 min a run and nothing consumes it yet.",
+    "nvidia-gaming": "Both of the above."
+  }
+}

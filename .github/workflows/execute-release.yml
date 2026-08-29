@@ -9,6 +9,20 @@ permissions:
   id-token: write
 
 jobs:
+  # config/flavors.json is the single source for which images exist. Promoting
+  # or releasing an image the build matrix no longer produces fails late and
+  # confusingly, so this reads the same list the build does.
+  variants:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      list: ${{ steps.resolve.outputs.list }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: resolve
+        run: echo "list=$(python3 scripts/flavors.py releases)" >> "$GITHUB_OUTPUT"
+
   check-trigger:
     runs-on: ubuntu-latest
     outputs:
@@ -21,7 +35,7 @@ jobs:
         run: |
           if [[ "$EVENT" == workflow_dispatch || "$MESSAGE" =~ ^chore:\ promote\ testing\ to\ main ]]; then echo 'is-promotion=true' >> "$GITHUB_OUTPUT"; fi
   execute:
-    needs: check-trigger
+    needs: [check-trigger, variants]
     if: needs.check-trigger.outputs.is-promotion == 'true'
     uses: projectbluefin/actions/.github/workflows/reusable-execute-release.yml@v1
     permissions:
@@ -32,8 +46,7 @@ jobs:
       pull-requests: write
     with:
       registry: ghcr.io/${{ github.repository_owner }}
-      variants: >-
-        [{"image":"utah","source_tag":"testing","target_tag":"stable"},{"image":"utah-nvidia","source_tag":"testing","target_tag":"stable"},{"image":"utah-gaming","source_tag":"testing","target_tag":"stable"},{"image":"utah-nvidia-gaming","source_tag":"testing","target_tag":"stable"}]
+      variants: ${{ needs.variants.outputs.list }}
       cosign_identity_regexp: ^https://github\.com/hanthor/utah/\.github/workflows/build\.yml@refs/heads/testing$
       fast_forward_sha: ${{ github.sha }}
       run_release_gate: true
