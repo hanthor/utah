@@ -23,6 +23,7 @@ LABEL containers.bootc=1
 
 COPY packages/bluefin.toml /usr/share/utah/bluefin.toml
 COPY packages/tunaos-hummingbird.repo /etc/yum.repos.d/tunaos-hummingbird.repo
+COPY packages/fedora-rawhide.repo /etc/yum.repos.d/fedora-rawhide.repo
 COPY scripts/install-packages.py /usr/local/libexec/utah-install-packages
 COPY scripts/verify-rpm-contract.py /usr/local/libexec/utah-verify-rpm-contract
 COPY scripts/build-gnome-extensions.sh /usr/local/libexec/utah-build-gnome-extensions
@@ -38,17 +39,18 @@ RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-
     cp -a /tmp/utah-local/. / && \
     rm -rf /tmp/utah-common /tmp/utah-brew /tmp/utah-local
 
-# Utah keeps Bluefin's user-facing package contract, with TunaOS's GNOME 51
-# stack preferred over the Hummingbird base packages. A missing package is a
-# build failure: silently skipping one would make parity claims meaningless.
+# Utah keeps Bluefin's user-facing package contract.  Hummingbird supplies the
+# bootable base; Fedora Rawhide supplies the complete desktop dependency graph.
+# A missing package is a build failure: silently skipping one would make parity
+# claims meaningless.
 RUN DNF="$(command -v dnf5 || command -v dnf)" && \
     /usr/local/libexec/utah-install-packages /usr/share/utah/bluefin.toml && \
-    "$DNF" -y install \
+    "$DNF" -y --disablerepo='*' --enablerepo=fedora-rawhide install \
       gnome-control-center gnome-session gnome-settings-daemon gnome-shell \
       gsettings-desktop-schemas gtk4 libadwaita mutter \
       xdg-desktop-portal xdg-desktop-portal-gnome \
       cmake dbus-devel glib2-devel meson sassc unzip && \
-    "$DNF" -y remove \
+    "$DNF" -y --disablerepo='*' --enablerepo=fedora-rawhide remove \
       fedora-bookmarks fedora-third-party firefox-langpacks \
       gnome-extensions-app gnome-shell-extension-background-logo \
       gnome-software gnome-software-rpm-ostree gnome-terminal-nautilus \

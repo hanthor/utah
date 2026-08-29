@@ -30,7 +30,21 @@ def main() -> int:
     dnf = shutil.which("dnf5") or shutil.which("dnf")
     if not dnf:
         raise RuntimeError("Hummingbird base does not provide dnf or dnf5")
-    return subprocess.run([dnf, "-y", "install", *selected], check=False).returncode
+    # The Hummingbird base remains the bootable substrate, but the desktop
+    # contract is deliberately sourced from one coherent Fedora Rawhide repo.
+    # This avoids mixing a partial Hummingbird desktop repository with the
+    # GNOME and Bluefin package dependency graph.
+    return subprocess.run(
+        [
+            dnf,
+            "-y",
+            "--disablerepo=*",
+            "--enablerepo=fedora-rawhide",
+            "install",
+            *selected,
+        ],
+        check=False,
+    ).returncode
 
 
 if __name__ == "__main__":
