@@ -140,7 +140,11 @@ def main() -> int:
     present = installed(excluded)
     if present:
         print(f"Removing {len(present)} excluded packages: {' '.join(present)}")
-        rc = run(dnf, "-y", "--no-autoremove", "remove", *present)
+        # dnf5 requires --no-autoremove after the subcommand, not before it:
+        # "The argument is available for commands: remove. (It has to be placed
+        # after the command.)" dnf4 accepts either position, so this ordering
+        # works on both.
+        rc = run(dnf, "-y", "remove", "--no-autoremove", *present)
         if rc:
             return rc
     else:
