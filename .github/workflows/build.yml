@@ -1,0 +1,33 @@
+name: Build Utah
+
+on:
+  pull_request:
+  push:
+    branches: [testing]
+  schedule:
+    - cron: "20 22 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: utah-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: projectbluefin/actions/.github/workflows/reusable-build.yml@v1
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      security-events: write
+      issues: write
+    with:
+      brand_name: utah
+      image_flavors: '["main", "nvidia", "gaming", "nvidia-gaming"]'
+      stream_name: testing
+      architecture: '["x86_64"]'
+      # Testing is advanced only after post-testing-e2e validates the build.
+      publish_stream_tag: "false"
