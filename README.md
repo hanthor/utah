@@ -5,10 +5,9 @@ Hummingbird.
 
 ## Design
 
-- One `x86_64` flavor for now, `main`, on a single `testing` stream. The
-  `nvidia`, `gaming` and `nvidia-gaming` variants are retired, not deleted, in
-  `config/flavors.json`, which is the single source for the build, promote and
-  release matrices; see below.
+- Four `x86_64` flavors -- `main`, `nvidia`, `gaming`, `nvidia-gaming` --
+  matching Bluefin's, on a single `testing` stream. `config/flavors.json` is the
+  single source for the build, promote and release matrices; see below.
 - Pinned Hummingbird `bootc-os` base, preserving its hardened and fast-moving
   upstream model.
 - Bluefin's base package manifest is the compatibility contract.
@@ -16,8 +15,9 @@ Hummingbird.
   plus its GNOME Extensions submodules, are retained with their normal build
   step.
 - The OGC kernel and NVIDIA's open module are built from source, since neither
-  Hummingbird nor UBlue publishes a build for this base. Both are cached, and
-  neither is built while the flavor set is `main` only; see below.
+  Hummingbird nor UBlue publishes a build for this base. Both are cached in an
+  image of their own so the cost is paid once per pin, not once per push; see
+  below.
 - CI delegates builds, vulnerability reporting, SBOMs, keyless signatures,
   provenance, caching, and rechunking to `projectbluefin/actions@v1`.
 
@@ -41,11 +41,10 @@ python3 scripts/flavors.py list          # ["main"]
 python3 scripts/flavors.py needs-kernel  # false
 ```
 
-It is currently `main` only. The NVIDIA and gaming variants are not deleted,
-just switched off: their scripts, their Containerfile stages and their cache
-image all remain, and restoring a flavor is adding its name back to that file.
-`retired` records why each is off, so the reason lives beside the list rather
-than in a commit message.
+All four are currently built. A flavor is switched off by removing it from
+`flavors` and recording why under `retired`, which keeps the reason beside the
+list rather than in a commit message; nothing else has to change, because the
+scripts, the Containerfile stages and the cache image all stay put either way.
 
 `just check` fails if any workflow names `utah-nvidia` or `utah-gaming`
 directly. Those literals were previously duplicated across three workflows,
