@@ -41,6 +41,14 @@ RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-
     cp -a /tmp/utah-local/. / && \
     rm -rf /tmp/utah-common /tmp/utah-brew /tmp/utah-local
 
+# This first check covers the flavor-independent contract only, which is why it
+# pins IMAGE_FLAVOR=main. verify-rpm-contract.py reads IMAGE_FLAVOR from the
+# environment, and the build sets it, so without this the nvidia flavors
+# asserted here that nvidia-driver, nvidia-driver-cuda and
+# nvidia-container-toolkit were installed -- several steps before
+# utah-install-nvidia runs. The flavor-aware assertion is the second call,
+# after the NVIDIA and OGC step.
+#
 # Utah keeps Bluefin's user-facing package contract.  Hummingbird supplies the
 # bootable base; Hummingbird's own repository plus Fedora 44 supply the rest,
 # which is the pairing Hummingbird composes its own buildroot from.
@@ -53,7 +61,7 @@ RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-
 # asserting a different set than the install had asked for.
 RUN /usr/local/libexec/utah-install-packages \
       /usr/share/utah/bluefin.toml /usr/share/utah/utah.toml && \
-    /usr/local/libexec/utah-verify-rpm-contract \
+    IMAGE_FLAVOR=main /usr/local/libexec/utah-verify-rpm-contract \
       /usr/share/utah/bluefin.toml /usr/share/utah/utah.toml && \
     DNF="$(command -v dnf5 || command -v dnf)" && \
     "$DNF" clean all && rm -rf /var/cache/libdnf5 /var/cache/dnf
