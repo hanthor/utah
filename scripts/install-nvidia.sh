@@ -45,9 +45,26 @@ driver_version="${UTAH_NVIDIA_DRIVER_VERSION:-595.84}"
 run="NVIDIA-Linux-x86_64-${driver_version}.run"
 url="https://download.nvidia.com/XFree86/Linux-x86_64/${driver_version}/${run}"
 
-kernel="$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n1)"
+ogc_release=""
+[ -f /usr/lib/utah/ogc-kernel-release ] && ogc_release="$(cat /usr/lib/utah/ogc-kernel-release)"
+
+# `kernel` is a metapackage.  A bootc base may well carry kernel-core without
+# it, in which case this query returns nothing and every path below silently
+# refers to /usr/lib/modules//build.  The module trees on disk are the ground
+# truth, so fall back to them -- excluding the OGC kernel, which is installed by
+# the time this runs and is a separate target rather than the base one.
+kernel="$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' 2>/dev/null | tail -n1 || true)"
+if [ -z "$kernel" ] || [ ! -d "/usr/lib/modules/${kernel}/build" ]; then
+  kernel="$(for d in /usr/lib/modules/*/; do
+              d="${d%/}"; d="${d##*/}"
+              [ "$d" = "$ogc_release" ] && continue
+              [ -d "/usr/lib/modules/$d/build" ] && echo "$d"
+            done | sort -V | tail -n1)"
+  echo "rpm named no usable kernel; using the module tree on disk: ${kernel:-none}"
+fi
+
 build_tree="/usr/lib/modules/${kernel}/build"
-if [ ! -d "$build_tree" ]; then
+if [ -z "$kernel" ] || [ ! -d "$build_tree" ]; then
   echo "No kernel build tree at $build_tree; cannot build the NVIDIA module" >&2
   exit 1
 fi
@@ -96,7 +113,7 @@ build_module "$kernel"
 
 if [ -n "$modules_only" ]; then
   if [[ "$flavor" == *gaming ]]; then
-    build_module "$(cat /usr/lib/utah/ogc-kernel-release)"
+    build_module "${ogc_release:?}"
   fi
   cp -f "$run_path" "${UTAH_KERNEL_CACHE_OUT_DIR:?}/nvidia-installer.run"
   rm -rf /tmp/nvidia-source
@@ -116,8 +133,7 @@ printf '%s\n' "$driver_version" >/usr/lib/utah/nvidia-driver-version
 if [[ "$flavor" == nvidia-gaming ]]; then
   # The OGC kernel is a second target: its tree was preserved by
   # install-ogc-kernel.sh precisely so this module can be built against it.
-  ogc_release="$(cat /usr/lib/utah/ogc-kernel-release)"
-  build_module "$ogc_release"
+  build_module "${ogc_release:?}"
 fi
 
 rm -rf "/tmp/${run}" /tmp/nvidia-source

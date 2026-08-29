@@ -91,10 +91,29 @@ def main() -> int:
 
     # Assert what a source build actually produces: a module for every kernel
     # the image can boot, and the userspace that goes with it.
-    releases = [subprocess.run(["rpm", "-q", "kernel", "--qf", "%{VERSION}-%{RELEASE}.%{ARCH}\n"],
-                               capture_output=True, text=True).stdout.split()[-1]]
+    ogc = Path("/usr/lib/utah/ogc-kernel-release")
+    ogc_release = ogc.read_text().strip() if ogc.exists() else None
+
+    # This deliberately mirrors install-nvidia.sh, including its fallback. `rpm
+    # -q kernel` is not reliable here: `kernel` is a metapackage a bootc base may
+    # not carry, and on failure rpm prints "package kernel is not installed" to
+    # stdout -- whose last word is "installed", which this used to accept as a
+    # release string and then report a missing module for a kernel of that name.
+    base = subprocess.run(["rpm", "-q", "kernel", "--qf", "%{VERSION}-%{RELEASE}.%{ARCH}\n"],
+                          capture_output=True, text=True).stdout.split()
+    base = base[-1] if base else ""
+    if not Path(f"/usr/lib/modules/{base}/build").is_dir():
+        candidates = sorted(d.name for d in Path("/usr/lib/modules").glob("*")
+                            if d.name != ogc_release and (d / "build").is_dir())
+        if not candidates:
+            print("ERROR: no kernel build tree found; cannot verify NVIDIA modules",
+                  file=sys.stderr)
+            return 1
+        base = candidates[-1]
+
+    releases = [base]
     if flavor == "nvidia-gaming":
-        releases.append(Path("/usr/lib/utah/ogc-kernel-release").read_text().strip())
+        releases.append(ogc.read_text().strip())
 
     failed = False
     for release in releases:
