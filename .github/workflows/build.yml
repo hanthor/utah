@@ -36,8 +36,45 @@ jobs:
       - name: Check package availability in Utah's repositories
         run: just check-repos
 
-  build:
+  # The OGC kernel compile and the NVIDIA module build depend only on the base
+  # image and on the two scripts that perform them, so they are hoisted out of
+  # the image build into an image of their own, tagged with a hash of exactly
+  # those inputs. When the tag already exists this job is a registry lookup and
+  # the three flavors that need it skip roughly half an hour of compiling each.
+  kernel-cache:
     needs: contract
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+          df -h /
+      - name: Log in to GHCR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GITHUB_TOKEN" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build the kernel cache image if it is not published yet
+        env:
+          REPO_ORGANIZATION: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          ref="ghcr.io/${REPO_ORGANIZATION,,}/utah-kernel-cache:$(./scripts/kernel-cache-tag.sh)"
+          if podman pull -q "$ref" >/dev/null 2>&1; then
+            echo "Cache hit: $ref is already published"
+            exit 0
+          fi
+          echo "Cache miss: building $ref"
+          podman build --tag "$ref" --file Containerfile.kernel .
+          podman push "$ref"
+
+  build:
+    needs: [contract, kernel-cache]
     uses: projectbluefin/actions/.github/workflows/reusable-build.yml@v1
     permissions:
       contents: read

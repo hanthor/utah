@@ -42,3 +42,9 @@ clear_dir() {
 }
 clear_dir "${CLEAN_ROOT:?}/run"
 clear_dir "${CLEAN_ROOT:?}/tmp"
+
+# The prebuilt kernel and NVIDIA archives the cache image supplies as its base
+# layer. They are build input, not image content, and they are large -- three of
+# the four flavors would otherwise ship roughly 1.5 GB of tarballs they have
+# already unpacked. main never has this directory at all.
+rm -rf "${CLEAN_ROOT:?}/utah-cache"

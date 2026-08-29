@@ -1,10 +1,36 @@
 #!/usr/bin/env bash
-# Build the OGC kernel used by Dakota's gaming images.  Hummingbird currently
+# Put the OGC kernel used by Dakota's gaming images into this image.  Hummingbird
 # publishes no OGC RPM, so this is intentionally a source build rather than a
 # silently substituted Fedora kernel.
+#
+# Compiling it takes about half an hour, and it depends on nothing this image
+# does -- only on the base image and the pin below.  Rebuilding it on every push
+# was pure waste, so the compile is hoisted into a cache image built from
+# Containerfile.kernel and keyed by those two inputs; see `just kernel-cache-tag`.
+# When that image is the base, the kernel arrives as a tarball and this script
+# unpacks it.  With no cache present -- a local `just build`, or the cache image's
+# own build -- it falls through to the source build, so both paths stay exercised
+# and neither can rot unnoticed.
 set -euo pipefail
 
+CACHE_DIR="${UTAH_KERNEL_CACHE_DIR:-/utah-cache}"
 DNF="$(command -v dnf5 || command -v dnf)"
+
+if [ -f "${CACHE_DIR}/ogc.tar" ]; then
+  echo "Unpacking the prebuilt OGC kernel from ${CACHE_DIR}/ogc.tar"
+  tar -C / -xf "${CACHE_DIR}/ogc.tar"
+  release="$(cat /usr/lib/utah/ogc-kernel-release)"
+  # modules.dep and friends are in the tarball, but the base kernel this image
+  # carries may differ from the one the cache was built on.  Regenerating is
+  # cheap and makes the outcome independent of that.
+  depmod -a "$release"
+  ln -sfn "vmlinuz-${release}" /boot/vmlinuz
+  test -s /usr/lib/utah/ogc-kernel-release
+  grep -qx 'CONFIG_SCHED_CLASS_EXT=y' /usr/lib/utah/ogc-kernel.config
+  grep -Eq '^CONFIG_NTSYNC=(y|m)$' /usr/lib/utah/ogc-kernel.config
+  exit 0
+fi
+
 # The pin was written as a `git describe --long` string --
 #   v7.1.8-ogc1-0-g86a4e13f16fb876282a12cc7680b3eb73d990e6b
 # -- and handed to `git clone --branch`, which takes a ref, not a description.
@@ -17,9 +43,17 @@ OGC_TAG="${OGC_KERNEL_TAG:-v7.1.8-ogc1}"
 OGC_COMMIT="${OGC_KERNEL_COMMIT:-86a4e13f16fb876282a12cc7680b3eb73d990e6b}"
 builddir=/usr/src/utah-ogc
 
-"$DNF" -y install \
-  bc bison cpio elfutils-libelf-devel flex gcc git make openssl-devel pahole \
-  perl python3 rsync xz zstd
+toolchain=(bc bison cpio elfutils-libelf-devel flex gcc git make openssl-devel
+           pahole perl python3 rsync xz zstd)
+# Which of those the image did not already have.  The unconditional `dnf remove`
+# this used to end with would happily take out git, python3 or perl when they
+# were part of the package contract rather than something we pulled in.
+absent=()
+for pkg in "${toolchain[@]}"; do
+  rpm -q "$pkg" >/dev/null 2>&1 || absent+=("$pkg")
+done
+
+"$DNF" -y install "${toolchain[@]}"
 git clone --depth 1 --branch "$OGC_TAG" https://github.com/OpenGamingCollective/linux.git "$builddir"
 pushd "$builddir"
 # A tag is mutable. Refuse to build anything other than the commit we pinned.
@@ -50,7 +84,21 @@ install -Dm0644 .config /usr/lib/utah/ogc-kernel.config
 printf '%s\n' "$release" >/usr/lib/utah/ogc-kernel-release
 popd
 rm -rf "$builddir"
-"$DNF" -y remove bc bison cpio elfutils-libelf-devel flex gcc git make openssl-devel pahole perl python3 rsync xz zstd
+
+# Everything the cache image needs to hand a later build, in one archive so no
+# caller has to know the release string or which paths a kernel install touches.
+if [ -n "${UTAH_KERNEL_CACHE_OUT:-}" ]; then
+  tar -C / -cf "${UTAH_KERNEL_CACHE_OUT}" \
+    "boot/vmlinuz-${release}" \
+    "usr/lib/modules/${release}" \
+    "usr/src/linux-${release}" \
+    usr/lib/utah/ogc-kernel.config \
+    usr/lib/utah/ogc-kernel-release
+fi
+
+if [ "${#absent[@]}" -gt 0 ]; then
+  "$DNF" -y remove "${absent[@]}"
+fi
 "$DNF" clean all
 test -s /usr/lib/utah/ogc-kernel-release
 grep -qx 'CONFIG_SCHED_CLASS_EXT=y' /usr/lib/utah/ogc-kernel.config

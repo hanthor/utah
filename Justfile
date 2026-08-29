@@ -1,5 +1,6 @@
 repo_organization := env_var_or_default("REPO_ORGANIZATION", "hanthor")
 image := "utah"
+kernel_cache_image := "utah-kernel-cache"
 
 default:
     @just --list
@@ -16,6 +17,16 @@ check:
     python3 scripts/install-packages.py --check packages/bluefin.toml
     python3 scripts/verify-rpm-contract.py --check packages/bluefin.toml
     grep -q 'projectbluefin/actions/.github/workflows/reusable-build.yml@v1' .github/workflows/build.yml
+    test -f Containerfile.kernel
+    bash -n scripts/install-ogc-kernel.sh
+    bash -n scripts/install-nvidia.sh
+    bash -n scripts/clean-stage.sh
+    bash -n scripts/kernel-cache-tag.sh
+    # The cache image must be built from the same base the image is, or the
+    # prebuilt NVIDIA module would be linked against a kernel this image never
+    # boots.  Two literals, one invariant, so assert it rather than trust it.
+    diff <(grep -m1 '^ARG BASE_IMAGE=' Containerfile) \
+         <(grep -m1 '^ARG BASE_IMAGE=' Containerfile.kernel)
 
 # Fail fast when a contract package is in none of the repositories the image
 # actually enables, instead of discovering it twenty minutes into a build.
@@ -56,6 +67,22 @@ generate-default-tag stream build_number:
 setup-cache base_name stream build_number event_name:
     @echo "utah-{{ stream }} 1"
 
+# The half-hour OGC kernel compile and the NVIDIA module build live in their own
+# image, keyed by their own inputs, so a push that touches neither does not pay
+# for them.  See Containerfile.kernel.
+kernel-cache-tag:
+    @./scripts/kernel-cache-tag.sh
+
+kernel-cache-ref:
+    @echo "ghcr.io/{{ repo_organization }}/{{ kernel_cache_image }}:$(./scripts/kernel-cache-tag.sh)"
+
+build-kernel-cache:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ref="ghcr.io/{{ repo_organization }}/{{ kernel_cache_image }}:$(./scripts/kernel-cache-tag.sh)"
+    echo "Building $ref"
+    podman build --tag "$ref" --file Containerfile.kernel .
+
 build-ghcr base_name stream flavor kernel_pin="":
     #!/usr/bin/env bash
     set -euo pipefail
@@ -67,7 +94,25 @@ build-ghcr base_name stream flavor kernel_pin="":
       nvidia-gaming) image_name="{{ image }}-nvidia-gaming" ;;
       *) echo "unknown Utah image flavor: {{ flavor }}" >&2; exit 2 ;;
     esac
+    # main builds neither the OGC kernel nor an NVIDIA module, so it keeps the
+    # pristine Hummingbird base and does not pull the cache image at all.  The
+    # other three take the cache image as their base; the install scripts find
+    # /utah-cache there and unpack rather than compile.
+    base_args=()
+    if [ "{{ flavor }}" != main ]; then
+      cache_ref="$(./scripts/kernel-cache-tag.sh)"
+      cache_ref="ghcr.io/{{ repo_organization }}/{{ kernel_cache_image }}:${cache_ref}"
+      # The cache image is published private by default, and the reusable build
+      # workflow only logs in to GHCR for non-PR events -- so pulling the base
+      # would 401 on exactly the runs that need it most.  It passes GITHUB_TOKEN
+      # through to this recipe, so use it.
+      if [ -n "${GITHUB_TOKEN:-}" ]; then
+        echo "${GITHUB_TOKEN}" | podman login ghcr.io -u "${GITHUB_ACTOR:-x}" --password-stdin
+      fi
+      base_args=(--build-arg BASE_IMAGE="$cache_ref")
+    fi
     podman build \
+      "${base_args[@]}" \
       --build-arg IMAGE_NAME="$image_name" \
       --build-arg IMAGE_FLAVOR={{ flavor }} \
       --build-arg IMAGE_VENDOR={{ repo_organization }} \

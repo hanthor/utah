@@ -1,0 +1,40 @@
+# The kernel cache image.
+#
+# Compiling the OGC kernel takes roughly half an hour and building NVIDIA's open
+# module takes several minutes more, and neither depends on anything Utah's own
+# Containerfile does -- only on the base image and on the pins inside
+# scripts/install-ogc-kernel.sh and scripts/install-nvidia.sh.  Doing that work
+# inside every image build meant paying it again on every push, for three of the
+# four flavors, for inputs that had not moved.
+#
+# So it is paid once here.  The result is the same base image plus a /utah-cache
+# directory of archives, published as ghcr.io/<owner>/utah-kernel-cache:<key>
+# where <key> is a hash of exactly those inputs (`just kernel-cache-tag`).  The
+# gaming, nvidia and nvidia-gaming builds then use this as their BASE_IMAGE and
+# the install scripts unpack instead of compiling.  `main` needs neither, so it
+# keeps using the pristine base and pays nothing for this.
+#
+# The cache image's own build has no /utah-cache, so the same scripts take their
+# source-build path here.  There is no second implementation to drift.
+ARG BASE_IMAGE=quay.io/hummingbird-community/bootc-os:latest@sha256:c5539f9ed4d93aab6bd41e4f5aef8ab83055f3f9e855a47b69fadb7420d0d1df
+
+FROM ${BASE_IMAGE} AS builder
+
+COPY scripts/install-ogc-kernel.sh /usr/local/libexec/utah-install-ogc-kernel
+COPY scripts/install-nvidia.sh /usr/local/libexec/utah-install-nvidia
+
+# nvidia-gaming is the superset: it produces a module for the base kernel and
+# one for the OGC kernel, so a single cache image serves all three flavors.
+RUN chmod 0755 /usr/local/libexec/utah-install-ogc-kernel /usr/local/libexec/utah-install-nvidia && \
+    mkdir -p /cache-out && \
+    UTAH_KERNEL_CACHE_OUT=/cache-out/ogc.tar \
+      /usr/local/libexec/utah-install-ogc-kernel && \
+    UTAH_NVIDIA_MODULES_ONLY=1 UTAH_KERNEL_CACHE_OUT_DIR=/cache-out \
+      /usr/local/libexec/utah-install-nvidia nvidia-gaming && \
+    ls -l /cache-out
+
+# The builder's toolchain, kernel tree and object files stay behind in the
+# builder.  What ships is the untouched base image plus the archives, so this
+# remains a legitimate base for a bootc build.
+FROM ${BASE_IMAGE}
+COPY --from=builder /cache-out /utah-cache
