@@ -12,9 +12,13 @@
 # package either: of its 3,510 packages, zero match nvidia or akmod.
 #
 # So there is no prebuilt module for this base, and the only remaining source
-# is NVIDIA's own. The base image does carry the build tree this needs --
-# /usr/lib/modules/<kernel>/build is present in
-# quay.io/hummingbird-community/bootc-os.
+# is NVIDIA's own.
+#
+# This used to claim the base image carries the build tree needed for that. It
+# does not, and the claim had never been executed: run 33253331819 reached this
+# script for the first time and found no /usr/lib/modules/<kernel>/build at all,
+# for any kernel. That directory comes from kernel-devel, which a bootc base has
+# no reason to ship. It is installed below, and removed again afterwards.
 #
 # Consequence worth stating plainly: the akmods bundle also supplied the
 # userspace RPMs (nvidia-driver, nvidia-driver-cuda, nvidia-container-toolkit).
@@ -48,24 +52,46 @@ url="https://download.nvidia.com/XFree86/Linux-x86_64/${driver_version}/${run}"
 ogc_release=""
 [ -f /usr/lib/utah/ogc-kernel-release ] && ogc_release="$(cat /usr/lib/utah/ogc-kernel-release)"
 
-# `kernel` is a metapackage.  A bootc base may well carry kernel-core without
-# it, in which case this query returns nothing and every path below silently
-# refers to /usr/lib/modules//build.  The module trees on disk are the ground
-# truth, so fall back to them -- excluding the OGC kernel, which is installed by
-# the time this runs and is a separate target rather than the base one.
-kernel="$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' 2>/dev/null | tail -n1 || true)"
-if [ -z "$kernel" ] || [ ! -d "/usr/lib/modules/${kernel}/build" ]; then
-  kernel="$(for d in /usr/lib/modules/*/; do
-              d="${d%/}"; d="${d##*/}"
-              [ "$d" = "$ogc_release" ] && continue
-              [ -d "/usr/lib/modules/$d/build" ] && echo "$d"
-            done | sort -V | tail -n1)"
-  echo "rpm named no usable kernel; using the module tree on disk: ${kernel:-none}"
+# Identify the base kernel from the module trees on disk, which are the ground
+# truth. `rpm -q kernel` is not: this base carries no such package, and rpm then
+# prints "package kernel is not installed" on stdout, which the old code turned
+# into a build tree path of /usr/lib/modules//build.
+#
+# The OGC kernel is excluded because it is installed by the time this runs and
+# is a separate target, handled at the end.
+kernel="$(for d in /usr/lib/modules/*/; do
+            d="${d%/}"; d="${d##*/}"
+            [ "$d" = "$ogc_release" ] || echo "$d"
+          done | sort -V | tail -n1)"
+
+diagnose() {
+  echo "--- /usr/lib/modules" >&2; ls -1 /usr/lib/modules >&2 || true
+  echo "--- installed kernel packages" >&2; rpm -qa "kernel*" | sort >&2 || true
+  echo "--- ogc release: ${ogc_release:-none}, base kernel: ${kernel:-none}" >&2
+}
+
+if [ -z "$kernel" ]; then
+  echo "No base kernel module tree found; cannot build the NVIDIA module" >&2
+  diagnose
+  exit 1
 fi
 
+# The module build tree comes from kernel-devel, which a bootc base has no
+# reason to ship -- and this one does not, which is what took out the first
+# attempt at a source build. It is needed only to compile against, so it is
+# installed here and removed again below if we were the ones who added it.
 build_tree="/usr/lib/modules/${kernel}/build"
-if [ -z "$kernel" ] || [ ! -d "$build_tree" ]; then
-  echo "No kernel build tree at $build_tree; cannot build the NVIDIA module" >&2
+installed_kernel_devel=""
+if [ ! -d "$build_tree" ]; then
+  echo "No build tree at $build_tree; installing kernel-devel-${kernel}"
+  if "$DNF" -y install "kernel-devel-${kernel}"; then
+    installed_kernel_devel="kernel-devel-${kernel}"
+  fi
+fi
+if [ ! -d "$build_tree" ]; then
+  echo "Still no kernel build tree at $build_tree after installing kernel-devel;" >&2
+  echo "the NVIDIA module cannot be compiled against the kernel this image boots." >&2
+  diagnose
   exit 1
 fi
 
@@ -137,5 +163,5 @@ if [[ "$flavor" == nvidia-gaming ]]; then
 fi
 
 rm -rf "/tmp/${run}" /tmp/nvidia-source
-"$DNF" -y remove gcc make
+"$DNF" -y remove gcc make ${installed_kernel_devel:+"$installed_kernel_devel"}
 "$DNF" clean all
