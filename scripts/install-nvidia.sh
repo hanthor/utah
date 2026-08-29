@@ -153,6 +153,7 @@ ensure_source() {
   [ -d /tmp/nvidia-source ] || sh "$run_path" --extract-only --target /tmp/nvidia-source
 }
 
+provided=()
 build_module() {
   # $1: kernel release whose module to provide.  Prefers the archive the cache
   # image built for exactly this release; compiles it when there is none.
@@ -172,7 +173,23 @@ build_module() {
     # Leave the tree clean so the next kernel does not link against these.
     make -C "$tree" M=/tmp/nvidia-source/kernel-open clean
   fi
+  # Assert the module actually landed. Both flavors reached the contract check
+  # reporting the module missing for every kernel, after logging a clean unpack
+  # of the cache archive -- which leaves "the archive was wrong" and "something
+  # later removed it" indistinguishable from the log. Failing here separates
+  # them: this firing means the archive did not contain what its name says.
+  if [ ! -f "/usr/lib/modules/${release}/extra/nvidia/nvidia.ko" ]; then
+    echo "No nvidia.ko for ${release} after providing the module" >&2
+    echo "--- /usr/lib/modules/${release}/extra" >&2
+    find "/usr/lib/modules/${release}/extra" -maxdepth 3 >&2 2>/dev/null || echo "(absent)" >&2
+    if [ -f "$cached" ]; then
+      echo "--- contents of ${cached}" >&2
+      tar -tf "$cached" >&2 || true
+    fi
+    exit 1
+  fi
   depmod -a "$release"
+  provided+=("$release")
   if [ -n "${UTAH_KERNEL_CACHE_OUT_DIR:-}" ]; then
     tar -C / -cf "${UTAH_KERNEL_CACHE_OUT_DIR}/nvidia-modules-${release}.tar" \
       "usr/lib/modules/${release}/extra/nvidia"
@@ -226,3 +243,16 @@ if [ "${#nvidia_drop[@]}" -gt 0 ]; then
   "$DNF" -y remove "${nvidia_drop[@]}"
 fi
 "$DNF" clean all
+
+# The other half of the bracket. The assertion inside build_module proves the
+# module was there when it was provided; this proves nothing between then and
+# here took it away again -- the .run installer, which reserves the right to
+# remove modules from an earlier driver installation, and the removal
+# transaction above being the two candidates.
+for release in "${provided[@]}"; do
+  if [ ! -f "/usr/lib/modules/${release}/extra/nvidia/nvidia.ko" ]; then
+    echo "nvidia.ko for ${release} was present when built and is gone now" >&2
+    find "/usr/lib/modules/${release}" -maxdepth 2 >&2 2>/dev/null || echo "(tree absent)" >&2
+    exit 1
+  fi
+done
