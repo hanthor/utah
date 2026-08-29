@@ -52,13 +52,11 @@ url="https://download.nvidia.com/XFree86/Linux-x86_64/${driver_version}/${run}"
 ogc_release=""
 [ -f /usr/lib/utah/ogc-kernel-release ] && ogc_release="$(cat /usr/lib/utah/ogc-kernel-release)"
 
-# Identify the base kernel from the module trees on disk, which are the ground
-# truth. `rpm -q kernel` is not: this base carries no such package, and rpm then
-# prints "package kernel is not installed" on stdout, which the old code turned
-# into a build tree path of /usr/lib/modules//build.
-#
-# The OGC kernel is excluded because it is installed by the time this runs and
-# is a separate target, handled at the end.
+# Identify the base kernel from the module trees on disk. The base does carry a
+# `kernel` package -- kernel-7.1.8-100.fc43.x86_64 -- so an rpm query would work
+# here, but the trees are the ground truth and cost nothing to read. The OGC
+# kernel is excluded: it is installed by the time this runs and is a separate
+# target, handled at the end.
 kernel="$(for d in /usr/lib/modules/*/; do
             d="${d%/}"; d="${d##*/}"
             [ "$d" = "$ogc_release" ] || echo "$d"
@@ -78,14 +76,45 @@ fi
 
 # The module build tree comes from kernel-devel, which a bootc base has no
 # reason to ship -- and this one does not, which is what took out the first
-# attempt at a source build. It is needed only to compile against, so it is
-# installed here and removed again below if we were the ones who added it.
+# attempt at a source build. It is needed only to compile against, so it goes in
+# here and comes out again below.
+#
+# It is not in the repositories this image enables either. The base kernel is a
+# Fedora 43 build, 7.1.8-100.fc43, and we pair Hummingbird with Fedora 44:
+#
+#   No match for argument: kernel-devel-7.1.8-100.fc43.x86_64
+#
+# Adding the Fedora 43 repository would not fix it for long, because a
+# repository only carries the current kernel and this image is pinned to a base
+# whose kernel will not move. Fedora own build system keeps every build
+# indefinitely, so that is where this comes from, addressed by exact NEVR.
+#
+# Those RPMs are unsigned at that path, so the download is checked against a
+# hash recorded here instead. It is a constant because the base image is pinned
+# by digest: the kernel cannot change without BASE_IMAGE changing.
+KERNEL_DEVEL_SHA256="${UTAH_KERNEL_DEVEL_SHA256:-b2b504c42b94875af88d666d64ca91000ff30439e74157723a188f54ceebc5ca}"
+
 build_tree="/usr/lib/modules/${kernel}/build"
 installed_kernel_devel=""
 if [ ! -d "$build_tree" ]; then
-  echo "No build tree at $build_tree; installing kernel-devel-${kernel}"
+  echo "No build tree at $build_tree; supplying kernel-devel-${kernel}"
   if "$DNF" -y install "kernel-devel-${kernel}"; then
     installed_kernel_devel="kernel-devel-${kernel}"
+  else
+    arch="${kernel##*.}"; nv="${kernel%.*}"; ver="${nv%%-*}"; rel="${nv#*-}"
+    koji="https://kojipkgs.fedoraproject.org/packages/kernel/${ver}/${rel}/${arch}"
+    rpmfile="kernel-devel-${ver}-${rel}.${arch}.rpm"
+    echo "Not in the enabled repositories; taking it from ${koji}/${rpmfile}"
+    curl --retry 3 --retry-all-errors -fsSLo "/tmp/${rpmfile}" "${koji}/${rpmfile}"
+    actual="$(sha256sum "/tmp/${rpmfile}" | cut -d" " -f1)"
+    if [ "$actual" != "$KERNEL_DEVEL_SHA256" ]; then
+      echo "kernel-devel SHA-256 is $actual, expected $KERNEL_DEVEL_SHA256" >&2
+      echo "The base image kernel has moved; update KERNEL_DEVEL_SHA256." >&2
+      exit 1
+    fi
+    "$DNF" -y install "/tmp/${rpmfile}"
+    installed_kernel_devel="kernel-devel"
+    rm -f "/tmp/${rpmfile}"
   fi
 fi
 if [ ! -d "$build_tree" ]; then

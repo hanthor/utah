@@ -64,6 +64,13 @@ if [ "$actual_commit" != "$OGC_COMMIT" ]; then
   echo "OGC tag $OGC_TAG resolves to $actual_commit, expected $OGC_COMMIT" >&2
   exit 1
 fi
+# A shallow clone does not fetch the tag object, so scripts/setlocalversion
+# decides the tree is not at a release and appends "+" -- the kernel came out as
+# 7.1.8-ogc1+, which reads as a modified tree. It is not modified: the commit is
+# checked against the pin immediately above. An empty .scmversion suppresses the
+# suffix without pretending the tree is something it is not.
+: > .scmversion
+
 make defconfig
 # Each of these three needs its dependencies enabled too, or olddefconfig drops
 # it again without a word:
