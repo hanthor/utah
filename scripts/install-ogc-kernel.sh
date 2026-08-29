@@ -5,14 +5,29 @@
 set -euo pipefail
 
 DNF="$(command -v dnf5 || command -v dnf)"
-OGC_REF="${OGC_KERNEL_REF:-v7.1.8-ogc1-0-g86a4e13f16fb876282a12cc7680b3eb73d990e6b}"
+# The pin was written as a `git describe --long` string --
+#   v7.1.8-ogc1-0-g86a4e13f16fb876282a12cc7680b3eb73d990e6b
+# -- and handed to `git clone --branch`, which takes a ref, not a description.
+# No such ref exists, so every gaming build died on
+#   fatal: Remote branch v7.1.8-ogc1-0-g86a4... not found in upstream origin
+# The tag is the part before the -0-g suffix, and the suffix is the commit it
+# pointed at. Both are kept: the tag is what git can clone, and the commit is
+# checked afterwards so a moved tag is caught rather than silently built.
+OGC_TAG="${OGC_KERNEL_TAG:-v7.1.8-ogc1}"
+OGC_COMMIT="${OGC_KERNEL_COMMIT:-86a4e13f16fb876282a12cc7680b3eb73d990e6b}"
 builddir=/usr/src/utah-ogc
 
 "$DNF" -y install \
   bc bison cpio elfutils-libelf-devel flex gcc git make openssl-devel pahole \
   perl python3 rsync xz zstd
-git clone --depth 1 --branch "$OGC_REF" https://github.com/OpenGamingCollective/linux.git "$builddir"
+git clone --depth 1 --branch "$OGC_TAG" https://github.com/OpenGamingCollective/linux.git "$builddir"
 pushd "$builddir"
+# A tag is mutable. Refuse to build anything other than the commit we pinned.
+actual_commit="$(git rev-parse HEAD)"
+if [ "$actual_commit" != "$OGC_COMMIT" ]; then
+  echo "OGC tag $OGC_TAG resolves to $actual_commit, expected $OGC_COMMIT" >&2
+  exit 1
+fi
 make defconfig
 scripts/config --enable SCHED_CLASS_EXT --enable NTSYNC --enable ANDROID_BINDERFS
 scripts/config --set-str LOCALVERSION "-ogc1" --disable LOCALVERSION_AUTO
