@@ -9,11 +9,34 @@ check:
     set -euo pipefail
     test -f Containerfile
     test -f packages/bluefin.toml
+    test -f packages/utah.toml
     python3 -m py_compile scripts/install-packages.py
     python3 -m py_compile scripts/verify-rpm-contract.py
+    python3 -m py_compile scripts/check-rawhide-availability.py
     python3 scripts/install-packages.py --check packages/bluefin.toml
     python3 scripts/verify-rpm-contract.py --check packages/bluefin.toml
     grep -q 'projectbluefin/actions/.github/workflows/reusable-build.yml@v1' .github/workflows/build.yml
+
+# Fail fast when a contract package has no Fedora Rawhide source, instead of
+# discovering it twenty minutes into an image build.  Needs network access.
+check-rawhide:
+    python3 scripts/check-rawhide-availability.py packages/bluefin.toml packages/utah.toml
+
+# packages/bluefin.toml is a verbatim copy of Bluefin's base.toml.  Drift here
+# is a parity bug, so make it loud rather than letting it accumulate quietly.
+check-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    upstream=$(mktemp)
+    trap 'rm -f "$upstream"' EXIT
+    curl -fsSL -o "$upstream" \
+      https://raw.githubusercontent.com/projectbluefin/bluefin/main/build_files/packages/base.toml
+    if diff -u "$upstream" packages/bluefin.toml; then
+      echo "packages/bluefin.toml matches projectbluefin/bluefin"
+    else
+      echo "packages/bluefin.toml has drifted from projectbluefin/bluefin" >&2
+      exit 1
+    fi
 
 image_name base_name stream flavor:
     #!/usr/bin/env bash

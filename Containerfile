@@ -22,6 +22,7 @@ LABEL org.opencontainers.image.version="${VERSION}"
 LABEL containers.bootc=1
 
 COPY packages/bluefin.toml /usr/share/utah/bluefin.toml
+COPY packages/utah.toml /usr/share/utah/utah.toml
 COPY packages/tunaos-hummingbird.repo /etc/yum.repos.d/tunaos-hummingbird.repo
 COPY packages/fedora-rawhide.repo /etc/yum.repos.d/fedora-rawhide.repo
 COPY scripts/install-packages.py /usr/local/libexec/utah-install-packages
@@ -42,20 +43,17 @@ RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-
 # Utah keeps Bluefin's user-facing package contract.  Hummingbird supplies the
 # bootable base; Fedora Rawhide supplies the complete desktop dependency graph.
 # A missing package is a build failure: silently skipping one would make parity
-# claims meaningless.
-RUN DNF="$(command -v dnf5 || command -v dnf)" && \
-    /usr/local/libexec/utah-install-packages /usr/share/utah/bluefin.toml && \
-    "$DNF" -y --disablerepo='*' --enablerepo=fedora-rawhide install \
-      gnome-control-center gnome-session gnome-settings-daemon gnome-shell \
-      gsettings-desktop-schemas gtk4 libadwaita mutter \
-      xdg-desktop-portal xdg-desktop-portal-gnome \
-      cmake dbus-devel glib2-devel meson sassc unzip && \
-    "$DNF" -y --disablerepo='*' --enablerepo=fedora-rawhide remove \
-      fedora-bookmarks fedora-third-party firefox-langpacks \
-      gnome-extensions-app gnome-shell-extension-background-logo \
-      gnome-software gnome-software-rpm-ostree gnome-terminal-nautilus \
-      yelp || true && \
-    /usr/local/libexec/utah-verify-rpm-contract /usr/share/utah/bluefin.toml && \
+# claims meaningless.  The only exceptions are the packages listed under
+# [unavailable] in packages/utah.toml, each of which carries a tracking issue.
+#
+# The package lists live in the manifests, not here.  When they were spelled
+# out in this RUN as well, the two copies drifted and the contract check was
+# asserting a different set than the install had asked for.
+RUN /usr/local/libexec/utah-install-packages \
+      /usr/share/utah/bluefin.toml /usr/share/utah/utah.toml && \
+    /usr/local/libexec/utah-verify-rpm-contract \
+      /usr/share/utah/bluefin.toml /usr/share/utah/utah.toml && \
+    DNF="$(command -v dnf5 || command -v dnf)" && \
     "$DNF" clean all && rm -rf /var/cache/libdnf5 /var/cache/dnf
 
 # The extensions are the same pinned submodules Bluefin ships. Keeping their
@@ -74,7 +72,8 @@ RUN case "${IMAGE_FLAVOR}" in \
       nvidia|nvidia-gaming) /usr/local/libexec/utah-install-nvidia "${IMAGE_FLAVOR}" ;; \
       main|gaming) ;; \
     esac && \
-    IMAGE_FLAVOR="${IMAGE_FLAVOR}" /usr/local/libexec/utah-verify-rpm-contract /usr/share/utah/bluefin.toml
+    IMAGE_FLAVOR="${IMAGE_FLAVOR}" /usr/local/libexec/utah-verify-rpm-contract \
+      /usr/share/utah/bluefin.toml /usr/share/utah/utah.toml
 
 RUN bootc container lint --fatal-warnings --skip nonempty-boot
 

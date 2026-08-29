@@ -1,0 +1,53 @@
+# Utah's Rawhide overlay on top of the Bluefin package contract.
+#
+# packages/bluefin.toml is a byte-for-byte copy of projectbluefin/bluefin's
+# build_files/packages/base.toml and must stay that way -- it is the parity
+# contract, and any drift there is a parity bug.  Everything Utah needs *in
+# addition to* (or *instead of*) that contract lives here.
+#
+# Sections:
+#   [gnome]        GNOME 51 desktop contract Hummingbird does not ship
+#   [build]        toolchain needed to build the pinned GNOME extensions
+#   [unavailable]  Bluefin contract packages with no Fedora Rawhide source
+
+[gnome]
+# Hummingbird supplies the bootable base but not a desktop.  Fedora Rawhide
+# supplies the complete GNOME 51 dependency graph.
+packages = [
+    "gnome-control-center",
+    "gnome-session",
+    "gnome-settings-daemon",
+    "gnome-shell",
+    "gsettings-desktop-schemas",
+    "gtk4",
+    "libadwaita",
+    "mutter",
+    "xdg-desktop-portal",
+    "xdg-desktop-portal-gnome",
+]
+
+[build]
+# Build dependencies for scripts/build-gnome-extensions.sh.
+packages = [
+    "cmake",
+    "dbus-devel",
+    "glib2-devel",
+    "meson",
+    "sassc",
+    "unzip",
+]
+
+[unavailable]
+# Packages Bluefin ships that Fedora Rawhide cannot provide.  Each entry MUST
+# carry a tracking issue: this list is the documented parity debt, not a
+# dumping ground for packages that are merely inconvenient.
+#
+# pipewire-libs-extra
+#   Only ever existed in negativo17's fedora-multimedia repo, which Bluefin
+#   enables for the whole [fedora] install.  negativo17 publishes fedora-43
+#   and fedora-44 only -- there is no fedora-45/46/rawhide branch -- so Utah
+#   has no source for it while it tracks Rawhide (currently Fedora 46).
+#   Tracked in hanthor/utah#4.
+packages = [
+    "pipewire-libs-extra",
+]
