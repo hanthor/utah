@@ -25,6 +25,7 @@ COPY packages/bluefin.toml /usr/share/utah/bluefin.toml
 COPY packages/utah.toml /usr/share/utah/utah.toml
 COPY packages/hummingbird.repo /etc/yum.repos.d/hummingbird.repo
 COPY packages/fedora-44.repo /etc/yum.repos.d/fedora-44.repo
+COPY packages/nvidia-container.repo /etc/yum.repos.d/nvidia-container.repo
 COPY scripts/install-packages.py /usr/local/libexec/utah-install-packages
 COPY scripts/verify-rpm-contract.py /usr/local/libexec/utah-verify-rpm-contract
 COPY scripts/build-gnome-extensions.sh /usr/local/libexec/utah-build-gnome-extensions

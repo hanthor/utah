@@ -21,9 +21,11 @@ from pathlib import Path
 # the same payload. Those files are what the image needs; the RPM names were
 # only ever how they happened to arrive.
 #
-# nvidia-container-toolkit is a real loss rather than a renaming: it has no
-# source configured here at all, so container GPU access is not available.
-NVIDIA_PACKAGES: tuple[str, ...] = ()
+# nvidia-container-toolkit still arrives as an RPM, from NVIDIA own repository
+# rather than from the akmods bundle, so it is asserted by name. It was recorded
+# here as a real loss on the reasoning that the bundle was unusable; the bundle
+# was one source, not the only one.
+NVIDIA_PACKAGES: tuple[str, ...] = ("nvidia-container-toolkit",)
 
 
 def section(path: Path, name: str) -> list[str]:

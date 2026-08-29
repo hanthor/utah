@@ -24,7 +24,11 @@
 # userspace RPMs (nvidia-driver, nvidia-driver-cuda, nvidia-container-toolkit).
 # A .run install provides the same userspace as files rather than as those RPM
 # names, so the contract check asserts the module and driver binaries instead.
-# nvidia-container-toolkit has no source here at all and is genuinely dropped.
+#
+# nvidia-container-toolkit is the exception, and an earlier version of this
+# comment was wrong about it. It said the package had no source here at all,
+# reasoning from the akmods bundle being unusable. That does not follow, and
+# NVIDIA publishes it directly; it is installed below.
 #
 # Neither the driver download nor the module compile depends on anything this
 # image does, so both are hoisted into the cache image built from
@@ -179,6 +183,13 @@ fi
 # the initramfs, or the running system's X configuration.
 sh "$run_path" --silent --no-kernel-module --no-nouveau-check \
   --no-rebuild-initramfs --no-backup --install-libglvnd
+
+# Container GPU access. This was written off as unavailable, on the grounds that
+# it came from UBlue akmods bundle and that bundle cannot be used here. The
+# bundle was one source, not the only one: NVIDIA publishes the toolkit itself,
+# from a path with no distribution version in it, and its dependencies are base
+# OS libraries Hummingbird already has. See packages/nvidia-container.repo.
+"$DNF" -y install nvidia-container-toolkit
 
 install -d /usr/lib/bootc/kargs.d /usr/lib/modprobe.d
 printf '%s\n' 'blacklist nouveau' 'options nouveau modeset=0' >/usr/lib/modprobe.d/00-nouveau-blacklist.conf
