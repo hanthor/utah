@@ -28,7 +28,16 @@ CLEAN_ROOT="${CLEAN_ROOT:-/}"
 # aux-cache and the swcatalog .xb files are all inside directories removed
 # here, so no separate file sweep is needed.
 find "${CLEAN_ROOT}/var"/* -maxdepth 0 -type d \! -name cache -exec rm -fr {} \;
-find "${CLEAN_ROOT}/var/cache"/* -maxdepth 0 -type d \! -name libdnf5 \! -name rpm-ostree -exec rm -fr {} \;
+# libdnf5 is not among them, despite what this used to say. The Containerfile
+# already deletes /var/cache/libdnf5 outright after the main transaction, and
+# main ships with no such directory and passes lint, so nothing needs it. What
+# put it back on the NVIDIA flavors is the GPG key imported for NVIDIA own
+# repository: `dnf clean all` removes the metadata but leaves the keyring, so
+# the tree survives, and bootc lint rejects both the untracked directories and
+# the key file inside them:
+#   d /var/cache/libdnf5/nvidia-container-toolkit-<hash>/pubring
+#   var/cache/libdnf5/nvidia-container-toolkit-<hash>/pubring/DDCAE044F796ECB0.pub
+find "${CLEAN_ROOT}/var/cache"/* -maxdepth 0 -type d \! -name rpm-ostree -exec rm -fr {} \;
 
 # /run and /tmp are cleared by emptying them, not by replacing them. The
 # container runtime bind-mounts /run/.containerenv, so `rm -rf /run` fails with
