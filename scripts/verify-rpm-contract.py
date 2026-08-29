@@ -104,11 +104,18 @@ def main() -> int:
     base = subprocess.run(["rpm", "-q", "kernel", "--qf", "%{VERSION}-%{RELEASE}.%{ARCH}\n"],
                           capture_output=True, text=True).stdout.split()
     base = base[-1] if base else ""
-    if not Path(f"/usr/lib/modules/{base}/build").is_dir():
+    # Identify the kernel by its module tree, not by a build tree. A build tree
+    # only exists while kernel-devel is installed, and install-nvidia.sh removes
+    # that again once the module is compiled -- 215 MiB there is no reason to
+    # ship. Requiring one here meant plain nvidia could never pass: the OGC
+    # flavors only satisfied it because install-ogc-kernel.sh leaves its own
+    # tree behind. A module tree is what says the image can boot that kernel,
+    # which is the thing being asserted.
+    if not Path(f"/usr/lib/modules/{base}").is_dir():
         candidates = sorted(d.name for d in Path("/usr/lib/modules").glob("*")
-                            if d.name != ogc_release and (d / "build").is_dir())
+                            if d.name != ogc_release and d.is_dir())
         if not candidates:
-            print("ERROR: no kernel build tree found; cannot verify NVIDIA modules",
+            print("ERROR: no kernel module tree found; cannot verify NVIDIA modules",
                   file=sys.stderr)
             return 1
         base = candidates[-1]
