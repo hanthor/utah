@@ -11,6 +11,8 @@ check:
     test -f Containerfile
     test -f packages/bluefin.toml
     test -f packages/utah.toml
+    test -f packages/utah-packages.repo
+    bash -n scripts/healthcheck-image.sh
     python3 -m py_compile scripts/install-packages.py
     python3 -m py_compile scripts/verify-rpm-contract.py
     python3 -m py_compile scripts/check-repo-availability.py
@@ -128,6 +130,7 @@ build-ghcr base_name stream flavor kernel_pin="":
       --build-arg SHA_HEAD_SHORT="$(git rev-parse --short HEAD)" \
       --tag "localhost/$image_name:{{ stream }}" \
       --file Containerfile .
+    IMAGE_FLAVOR={{ flavor }} ./scripts/healthcheck-image.sh "localhost/$image_name:{{ stream }}"
 
 generate-build-tags base_name stream flavor kernel_pin build_number version event_name event_number:
     @echo "{{ stream }} {{ version }}"
