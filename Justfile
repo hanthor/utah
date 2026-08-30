@@ -121,6 +121,11 @@ build-ghcr base_name stream flavor kernel_pin="":
       fi
       base_args=(--build-arg BASE_IMAGE="$cache_ref")
     fi
+    # The package overlay is a private GHCR package while it is developed.
+    # Authenticate before *every* flavor, including main, which has no kernel cache.
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+      echo "${GITHUB_TOKEN}" | podman login ghcr.io -u "${GITHUB_ACTOR:-x}" --password-stdin
+    fi
     podman build \
       "${base_args[@]}" \
       --build-arg IMAGE_NAME="$image_name" \
