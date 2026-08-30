@@ -1,0 +1,13 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["dockerfile", "github-actions"],
+  "packageRules": [
+    {
+      "description": "Keep Utah's package factory immutable in each image build.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/projectbluefin/utah-packages"],
+      "pinDigests": true
+    }
+  ]
+}
