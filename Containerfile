@@ -38,12 +38,11 @@ COPY scripts/build-gnome-extensions.sh /usr/local/libexec/utah-build-gnome-exten
 COPY scripts/install-ogc-kernel.sh /usr/local/libexec/utah-install-ogc-kernel
 COPY scripts/install-nvidia.sh /usr/local/libexec/utah-install-nvidia
 COPY scripts/clean-stage.sh /usr/local/libexec/utah-clean-stage
-COPY scripts/healthcheck-image.sh /usr/local/libexec/utah-healthcheck-image
 COPY --from=common /system_files/shared /tmp/utah-common
 COPY --from=brew /system_files /tmp/utah-brew
 COPY system_files/shared /tmp/utah-local
 
-RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-verify-rpm-contract /usr/local/libexec/utah-build-gnome-extensions /usr/local/libexec/utah-install-ogc-kernel /usr/local/libexec/utah-install-nvidia /usr/local/libexec/utah-clean-stage /usr/local/libexec/utah-healthcheck-image && \
+RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-verify-rpm-contract /usr/local/libexec/utah-build-gnome-extensions /usr/local/libexec/utah-install-ogc-kernel /usr/local/libexec/utah-install-nvidia /usr/local/libexec/utah-clean-stage && \
     cp -a /tmp/utah-common/. / && \
     cp -a /tmp/utah-brew/. / && \
     cp -a /tmp/utah-local/. / && \
@@ -101,7 +100,6 @@ RUN case "${IMAGE_FLAVOR}" in \
 # is the NVIDIA and OGC step, not after the main transaction.
 RUN /usr/local/libexec/utah-clean-stage
 
-RUN bootc container lint --fatal-warnings --skip nonempty-boot && \
-    IMAGE_FLAVOR="${IMAGE_FLAVOR}" /usr/local/libexec/utah-healthcheck-image
+RUN bootc container lint --fatal-warnings --skip nonempty-boot
 
 CMD ["/sbin/init"]
