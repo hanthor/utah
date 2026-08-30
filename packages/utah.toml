@@ -1,0 +1,111 @@
+# Utah's Rawhide overlay on top of the Bluefin package contract.
+#
+# packages/bluefin.toml is a byte-for-byte copy of projectbluefin/bluefin's
+# build_files/packages/base.toml and must stay that way -- it is the parity
+# contract, and any drift there is a parity bug.  Everything Utah needs *in
+# addition to* (or *instead of*) that contract lives here.
+#
+# Sections:
+#   [gnome]        GNOME 51 desktop contract Hummingbird does not ship
+#   [build]        toolchain needed to build the pinned GNOME extensions
+#   [unavailable]  Bluefin contract packages with no Fedora Rawhide source
+#
+# On [multimedia_overrides], which Utah deliberately does not install:
+#
+#   Those twelve entries -- mesa-libGL, mesa-vulkan-drivers, libva,
+#   intel-mediasdk, libheif and friends -- are not extra packages. They are the
+#   same package names Fedora already ships, which Bluefin *replaces* with
+#   negativo17 builds by enabling fedora-multimedia. Utah does not enable that
+#   repository, so it installs Fedora's builds of those names instead. Nothing
+#   is missing from the image; what differs is which build of them it carries,
+#   and the practical consequence is hardware-accelerated codec support.
+#
+#   This is why they are absent from the contract rather than listed under
+#   [unavailable]: [unavailable] means "no source provides this name at all",
+#   which is true of pipewire-libs-extra and false of these. Recording them as
+#   missing would be wrong, and recording them as satisfied would hide a real
+#   functional difference from Bluefin.
+#
+#   The factory is already building several of them for Hummingbird --
+#   intel-gmmlib, intel-mediasdk, intel-vpl-gpu-rt, libheif and libva all built
+#   in hanthor/hummingbird-github. When that overlay is published and enabled
+#   here, it becomes the source that negativo17 is for Bluefin, and these can
+#   move into the contract as a version assertion rather than a name one.
+
+[gnome]
+# Hummingbird supplies the bootable base but not a desktop.  Fedora Rawhide
+# supplies the complete GNOME 51 dependency graph.
+packages = [
+    "gnome-control-center",
+    "gnome-session",
+    "gnome-settings-daemon",
+    "gnome-shell",
+    "gsettings-desktop-schemas",
+    "gtk4",
+    "libadwaita",
+    "mutter",
+    "xdg-desktop-portal",
+    "xdg-desktop-portal-gnome",
+]
+
+[build]
+# Build dependencies for scripts/build-gnome-extensions.sh.
+packages = [
+    "cmake",
+    "dbus-devel",
+    "glib2-devel",
+    "meson",
+    "sassc",
+    "unzip",
+]
+
+[unavailable]
+# Packages Bluefin ships that none of Utah's repositories provide.  Each entry
+# MUST carry a tracking issue: this list is the documented parity debt, not a
+# dumping ground for packages that are merely inconvenient.
+#
+# pipewire-libs-extra
+#   Not a Fedora package at all: it only ever existed in negativo17's
+#   fedora-multimedia repo, which Bluefin enables for its whole [fedora]
+#   install.  Absent from Fedora 44 and from Hummingbird alike.
+#   Tracked in hanthor/utah#4.
+packages = [
+    "pipewire-libs-extra",
+]
+
+# nvidia-container-toolkit was recorded here as a second gap. It is not one, and
+# the reasoning that put it here was faulty: it came from UBlue's akmods bundle,
+# that bundle is unusable on this base, and the conclusion drawn was that no
+# source existed. The bundle was one source, not the only one.
+#
+# NVIDIA publishes the toolkit itself at
+# https://nvidia.github.io/libnvidia-container/stable/rpm/$basearch -- a path
+# with no distribution version in it, so unlike the akmods bundle it is not tied
+# to a Fedora release or an exact kernel NEVR. Its dependencies are base OS
+# libraries Hummingbird already has: glibc 2.17 symbols, libcap, libelf,
+# libseccomp.so.2, libresolv, none of them version-pinned.
+#
+# So it is installed on the nvidia flavors from packages/nvidia-container.repo,
+# and verify-rpm-contract.py asserts it by name. Container GPU access is not
+# lost. The driver and its userspace still arrive as files from the .run payload
+# rather than as RPMs, which is why only this one name is asserted.
+#
+# On CUDA, which was considered and deliberately not included.
+#
+# NVIDIA publishes a CUDA repository with a fedora44 directory, so it is
+# available. Measured from its metadata rather than guessed: the cuda-toolkit
+# closure is 65 packages, 3.97 GB to download and 7.68 GB installed. This image
+# is a few GB, so that multiplies it, in every pull and every layer, and it has
+# to survive an OCI export and a rechunk on a runner that already needed disk
+# freed for the kernel build.
+#
+# The full `cuda` metapackage is worse and is not even installable here: it
+# requires kmod-nvidia-open-dkms, nvidia-driver-libs, nvidia-driver-common and
+# dkms, which are RPM names this image does not have, because the driver arrives
+# from the .run payload as files.
+#
+# The right home for CUDA on an image like this is a container, which is exactly
+# what the toolkit above makes possible: `podman run --device nvidia.com/gpu=all`
+# against one of NVIDIA CUDA images gets the full toolkit with GPU access and
+# nothing in the base image. That is a better answer than 7.68 GB of it baked in,
+# so this stays out unless someone asks for it with that trade-off in view.

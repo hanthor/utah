@@ -1,0 +1,9 @@
+{
+  "flavors": [
+    "main",
+    "nvidia",
+    "gaming",
+    "nvidia-gaming"
+  ],
+  "retired": {}
+}
