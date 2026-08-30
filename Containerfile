@@ -49,7 +49,13 @@ COPY scripts/install-ogc-kernel.sh /usr/local/libexec/utah-install-ogc-kernel
 COPY scripts/install-nvidia.sh /usr/local/libexec/utah-install-nvidia
 COPY scripts/clean-stage.sh /usr/local/libexec/utah-clean-stage
 COPY scripts/configure-services.sh /usr/local/libexec/utah-configure-services
+# Consume the shared base AND the Bluefin branding/flatpak payload from the
+# common image, matching bluefin-lts. /system_files/bluefin carries the
+# bluefin wallpapers and logos, plymouth/pixmaps, the flatpak Brewfiles,
+# preinstall hooks and per-app overrides, and the display/desktop system files
+# that turn the raw desktop into a Bluefin-style session.
 COPY --from=common /system_files/shared /tmp/utah-common
+COPY --from=common /system_files/bluefin /tmp/utah-common
 COPY --from=brew /system_files /tmp/utah-brew
 COPY system_files/shared /tmp/utah-local
 
