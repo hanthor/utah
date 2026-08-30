@@ -8,6 +8,12 @@ set -eoux pipefail
 IMAGE_PRETTY_NAME="Utah"
 IMAGE_LIKE="fedora"
 IMAGE_NAME="${IMAGE_NAME:-utah}"
+# Canonical OS identity is always "utah", regardless of which image repository
+# name a flavor was published under (utah-nvidia, utah-gaming, ...). Bluefin
+# tooling and the desktop contract read IMAGE_ID and image-name to decide
+# whether they are on a Bluefin-derived image; the flavor lives in
+# image-flavor, not in the identity.
+IMAGE_ID="${IMAGE_ID:-utah}"
 IMAGE_VENDOR="${IMAGE_VENDOR:-projectbluefin}"
 IMAGE_FLAVOR="${IMAGE_FLAVOR:-main}"
 VERSION="${VERSION:-testing}"
@@ -23,7 +29,7 @@ install -d -m0755 /usr/share/ublue-os
 # published image name and flavor.
 cat >"${IMAGE_INFO}" <<EOF
 {
-  "image-name": "${IMAGE_NAME}",
+  "image-name": "${IMAGE_ID}",
   "image-flavor": "${IMAGE_FLAVOR}",
   "image-vendor": "${IMAGE_VENDOR}",
   "image-ref": "ostree-image-signed:docker://ghcr.io/${IMAGE_VENDOR}/${IMAGE_NAME}",
@@ -45,7 +51,7 @@ set_os_release() {
 }
 
 set_os_release NAME "${IMAGE_PRETTY_NAME}"
-set_os_release VARIANT_ID "${IMAGE_NAME}"
+set_os_release VARIANT_ID "${IMAGE_ID}"
 set_os_release PRETTY_NAME "${IMAGE_PRETTY_NAME} (Version: ${VERSION})"
 set_os_release ID "${IMAGE_PRETTY_NAME,,}"
 set_os_release ID_LIKE "${IMAGE_LIKE}"
@@ -59,7 +65,7 @@ set_os_release DEFAULT_HOSTNAME "${IMAGE_PRETTY_NAME,,}"
 set_os_release VERSION_CODENAME "Utahraptor"
 set_os_release VERSION "${VERSION} (${BASE_IMAGE_NAME^})"
 set_os_release OSTREE_VERSION "${VERSION}"
-set_os_release IMAGE_ID "${IMAGE_NAME}"
+set_os_release IMAGE_ID "${IMAGE_ID}"
 set_os_release IMAGE_VERSION "${VERSION}"
 set_os_release BUILD_ID "${SHA_HEAD_SHORT}"
 
@@ -75,4 +81,4 @@ fi
 printf '…\n' >/usr/share/ublue-os/fastfetch-user-count
 printf '…\n' >/usr/share/ublue-os/bazaar-install-count
 
-printf 'Utah branding configured for %s (%s)\n' "${IMAGE_NAME}" "${IMAGE_FLAVOR}"
+printf 'Utah branding configured for %s (flavor %s)\n' "${IMAGE_NAME}" "${IMAGE_FLAVOR}"

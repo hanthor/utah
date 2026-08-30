@@ -175,6 +175,7 @@ build-ghcr base_name stream flavor kernel_pin="":
     podman build \
       "${base_args[@]}" \
       --build-arg IMAGE_NAME="$image_name" \
+      --build-arg IMAGE_ID="{{ image }}" \
       --build-arg IMAGE_FLAVOR={{ flavor }} \
       --build-arg IMAGE_VENDOR={{ repo_organization }} \
       --build-arg VERSION="$version" \

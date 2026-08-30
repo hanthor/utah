@@ -15,6 +15,9 @@ FROM ${PACKAGE_IMAGE}@${PACKAGE_IMAGE_SHA} AS packages
 FROM ${BASE_IMAGE}
 
 ARG IMAGE_NAME=utah
+# Canonical OS identity, distinct from the repository name a flavor publishes
+# under. Always utah; never flavored.
+ARG IMAGE_ID=utah
 ARG IMAGE_FLAVOR=main
 ARG IMAGE_VENDOR=projectbluefin
 ARG VERSION=testing

@@ -116,7 +116,7 @@ apps = [
   "org.gnome.font-viewer",
   "org.gtk.Gtk3theme.adw-gtk3",
   "org.gtk.Gtk3theme.adw-gtk3-dark",
-  "org.mozilla.thunderbird",
+  "org.mozilla.Thunderbird",
   "org.mozilla.firefox",
   "page.tesk.Refine",
 ]
