@@ -1,0 +1,7 @@
+[utah-packages]
+name=Utah GNOME 51 package overlay
+baseurl=file:///var/cache/utah-packages
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+priority=1
