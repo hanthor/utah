@@ -19,7 +19,7 @@ from pathlib import Path
 # while the Hummingbird base pins 3.5.6, so a Rawhide desktop stack is
 # unresolvable here -- 38 packages in this contract's closure need
 # libcrypto.so.4, including boot-critical ones.
-REPOS = ("public-hummingbird-x86_64-rpms", "fedora-44", "fedora-44-updates")
+REPOS = ("utah-packages", "public-hummingbird-x86_64-rpms", "fedora-44", "fedora-44-updates")
 
 
 def section(path: Path, name: str) -> list[str]:
