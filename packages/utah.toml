@@ -28,7 +28,7 @@
 #
 #   The factory is already building several of them for Hummingbird --
 #   intel-gmmlib, intel-mediasdk, intel-vpl-gpu-rt, libheif and libva all built
-#   in hanthor/hummingbird-github. When that overlay is published and enabled
+#   in projectbluefin/hummingbird-github. When that overlay is published and enabled
 #   here, it becomes the source that negativo17 is for Bluefin, and these can
 #   move into the contract as a version assertion rather than a name one.
 
@@ -77,7 +77,7 @@ packages = [
 #   Not a Fedora package at all: it only ever existed in negativo17's
 #   fedora-multimedia repo, which Bluefin enables for its whole [fedora]
 #   install.  Absent from Fedora 44 and from Hummingbird alike.
-#   Tracked in hanthor/utah#4.
+#   Tracked in projectbluefin/utah#4.
 packages = [
     "pipewire-libs-extra",
 ]

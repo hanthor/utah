@@ -1,4 +1,4 @@
-repo_organization := env_var_or_default("REPO_ORGANIZATION", "hanthor")
+repo_organization := env_var_or_default("REPO_ORGANIZATION", "projectbluefin")
 image := "utah"
 kernel_cache_image := "utah-kernel-cache"
 base_dir := env_var_or_default("BASE_DIR", "output")
@@ -21,6 +21,15 @@ check:
     grep -q 'enable ublue-system-setup.service' system_files/shared/usr/lib/systemd/system-preset/85-utah-desktop.preset
     test -f scripts/configure-services.sh
     bash -n scripts/configure-services.sh
+    test -f scripts/configure-branding.sh
+    bash -n scripts/configure-branding.sh
+    test -f scripts/verify-desktop-contract.py
+    test -f contracts/bluefin-desktop.toml
+    python3 -m py_compile scripts/verify-desktop-contract.py
+    python3 scripts/verify-desktop-contract.py --check contracts/bluefin-desktop.toml
+    grep -q '/system_files/bluefin' Containerfile
+    grep -q 'flatpak-preinstall.service' scripts/configure-services.sh
+    grep -q 'flathub.flatpakrepo' scripts/configure-services.sh
     test -f iso/live/Containerfile
     test -f iso/live/src/configure-live.sh
     test -f iso/scripts/build-iso.sh
@@ -56,6 +65,17 @@ check:
     # config/flavors.json exists to stop: narrowing the build matrix while
     # promote and release still name images nothing produces fails late.
     ! grep -rn 'utah-nvidia\|utah-gaming' .github/workflows/
+
+# Verify branding, desktop defaults, first-boot Flatpak policy, and service
+# enablement in an already-composed image. The same verifier runs in the
+# Containerfile, so this is useful for a local image or a CI artifact.
+check-desktop-contract image_ref="localhost/utah:testing":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    podman run --rm --entrypoint /usr/bin/python3 \
+      -v "$PWD/contracts/bluefin-desktop.toml:/tmp/bluefin-desktop.toml:ro" \
+      -v "$PWD/scripts/verify-desktop-contract.py:/tmp/verify-desktop-contract.py:ro" \
+      "{{ image_ref }}" /tmp/verify-desktop-contract.py /tmp/bluefin-desktop.toml
 
 # Fail fast when a contract package is in none of the repositories the image
 # actually enables, instead of discovering it twenty minutes into a build.
