@@ -35,7 +35,6 @@ LABEL containers.bootc=1
 COPY packages/bluefin.toml /usr/share/utah/bluefin.toml
 COPY packages/utah.toml /usr/share/utah/utah.toml
 COPY packages/hummingbird.repo /etc/yum.repos.d/hummingbird.repo
-COPY packages/fedora-44.repo /etc/yum.repos.d/fedora-44.repo
 COPY packages/nvidia-container.repo /etc/yum.repos.d/nvidia-container.repo
 COPY packages/utah-packages.repo /etc/yum.repos.d/utah-packages.repo
 # The package image is an RPM repository, not a runtime dependency. Its
@@ -51,6 +50,7 @@ COPY scripts/clean-stage.sh /usr/local/libexec/utah-clean-stage
 COPY scripts/configure-services.sh /usr/local/libexec/utah-configure-services
 COPY scripts/configure-branding.sh /usr/local/libexec/utah-configure-branding
 COPY scripts/verify-desktop-contract.py /usr/local/libexec/utah-verify-desktop-contract
+COPY scripts/verify-gnome-extensions.py /usr/local/libexec/utah-verify-gnome-extensions
 COPY contracts/bluefin-desktop.toml /usr/share/utah/bluefin-desktop.toml
 # Common publishes Bluefin artwork, desktop defaults, Brewfiles, and setup
 # hooks in a separate profile from its shared system files. Both are required:
@@ -61,7 +61,7 @@ COPY --from=common /system_files/bluefin /tmp/utah-bluefin
 COPY --from=brew /system_files /tmp/utah-brew
 COPY system_files/shared /tmp/utah-local
 
-RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-verify-rpm-contract /usr/local/libexec/utah-build-gnome-extensions /usr/local/libexec/utah-install-ogc-kernel /usr/local/libexec/utah-install-nvidia /usr/local/libexec/utah-clean-stage /usr/local/libexec/utah-configure-services /usr/local/libexec/utah-configure-branding /usr/local/libexec/utah-verify-desktop-contract && \
+RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-verify-rpm-contract /usr/local/libexec/utah-build-gnome-extensions /usr/local/libexec/utah-install-ogc-kernel /usr/local/libexec/utah-install-nvidia /usr/local/libexec/utah-clean-stage /usr/local/libexec/utah-configure-services /usr/local/libexec/utah-configure-branding /usr/local/libexec/utah-verify-desktop-contract /usr/local/libexec/utah-verify-gnome-extensions && \
     cp -a /tmp/utah-common/. / && \
     cp -a /tmp/utah-bluefin/. / && \
     cp -a /tmp/utah-brew/. / && \
@@ -77,10 +77,10 @@ RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-
 # after the NVIDIA and OGC step.
 #
 # Utah keeps Bluefin's user-facing package contract.  Hummingbird supplies the
-# bootable base; Hummingbird's own repository plus Fedora 44 supply the rest,
-# The pinned Utah package repository, Hummingbird's own repository, and Fedora
-# 44 supply the desktop and the rest, which is the pairing Hummingbird composes
-# its own buildroot from.
+# bootable base; the pinned Utah package repository and Hummingbird's own
+# repository supply the desktop and the rest.  Fedora repositories are never
+# enabled at runtime -- they are bootstrap material for the package factory's
+# buildroot, not a source of installed packages.
 # A missing package is a build failure: silently skipping one would make parity
 # claims meaningless.  The only exceptions are the packages listed under
 # [unavailable] in packages/utah.toml, each of which carries a tracking issue.
@@ -107,6 +107,7 @@ RUN mkdir -p /tmp/uupd && \
     curl -fsSL "https://raw.githubusercontent.com/ublue-os/uupd/${UUPD_VERSION}/uupd.timer" \
       -o /tmp/uupd/uupd.timer && \
     /usr/local/libexec/utah-build-gnome-extensions && \
+    /usr/local/libexec/utah-verify-gnome-extensions && \
     glib-compile-schemas /usr/share/glib-2.0/schemas && \
     ENABLE_SSHD="${ENABLE_SSHD}" /usr/local/libexec/utah-configure-services && \
     /usr/local/libexec/utah-configure-branding && \
