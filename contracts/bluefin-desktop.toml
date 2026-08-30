@@ -1,6 +1,6 @@
-# Runtime contract for the Bluefin experience Utah promises on top of
+# Runtime contract for Utah's Bluefin-derived desktop experience on top of
 # Hummingbird. This is intentionally separate from packages/bluefin.toml:
-# package parity proves RPMs; this file proves the resulting desktop identity,
+# package parity proves RPMs; this file proves Utah identity, Bluefin desktop
 # defaults, and first-boot Flatpak policy.
 
 [branding]
@@ -16,20 +16,20 @@ files = [
 ]
 
 [branding.os_release]
-NAME = "Bluefin"
-ID = "bluefin"
+NAME = "Utah"
+ID = "utah"
 ID_LIKE = "fedora"
-CPE_NAME = "cpe:/o:universal-blue:bluefin"
+CPE_NAME = "cpe:/o:universal-blue:utah"
 HOME_URL = "https://projectbluefin.io"
 DOCUMENTATION_URL = "https://docs.projectbluefin.io"
-SUPPORT_URL = "https://github.com/projectbluefin/bluefin/issues/"
-BUG_REPORT_URL = "https://github.com/projectbluefin/bluefin/issues/"
-DEFAULT_HOSTNAME = "bluefin"
-VERSION_CODENAME = "Deinonychus"
+SUPPORT_URL = "https://github.com/projectbluefin/utah/issues/"
+BUG_REPORT_URL = "https://github.com/projectbluefin/utah/issues/"
+DEFAULT_HOSTNAME = "utah"
+VERSION_CODENAME = "Utahraptor"
 IMAGE_ID = "utah"
 
 [branding.os_release_patterns]
-PRETTY_NAME = '^Bluefin \(Version: .+\)$'
+PRETTY_NAME = '^Utah \(Version: .+\)$'
 VERSION = '^.+ \(Hummingbird\)$'
 VARIANT_ID = '^utah(-.*)?$'
 OSTREE_VERSION = '^.+$'

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Verify Utah's non-RPM Bluefin desktop contract.
+"""Verify Utah's non-RPM desktop contract.
 
 The checker runs inside a composed image for runtime verification, while
 ``--check`` validates the contract itself in source-only CI. RPM parity remains
-in verify-rpm-contract.py; this covers identity, desktop defaults, Flatpak
-policy, and required service enablement.
+in verify-rpm-contract.py; this covers Utah identity, Bluefin desktop defaults,
+Flatpak policy, and required service enablement.
 """
 
 from __future__ import annotations
@@ -169,7 +169,7 @@ def main() -> int:
     if errors:
         return 1
     print(
-        f"Bluefin desktop contract passed: {len(flatpak['apps'])} Flatpaks, "
+        f"Utah desktop contract passed: {len(flatpak['apps'])} Flatpaks, "
         f"{len(services.get('enabled', []))} enabled services"
     )
     return 0

@@ -1,10 +1,11 @@
 #!/usr/bin/bash
-# Apply Bluefin identity to the Hummingbird base after all packages and
-# system-files overlays are present.
+# Apply Utah's OS identity to the Hummingbird base after all packages and
+# system-files overlays are present. Utah consumes Bluefin's desktop assets and
+# defaults, but remains a distinct, supportable Project Bluefin variant.
 
 set -eoux pipefail
 
-IMAGE_PRETTY_NAME="Bluefin"
+IMAGE_PRETTY_NAME="Utah"
 IMAGE_LIKE="fedora"
 IMAGE_NAME="${IMAGE_NAME:-utah}"
 IMAGE_VENDOR="${IMAGE_VENDOR:-projectbluefin}"
@@ -49,13 +50,13 @@ set_os_release PRETTY_NAME "${IMAGE_PRETTY_NAME} (Version: ${VERSION})"
 set_os_release ID "${IMAGE_PRETTY_NAME,,}"
 set_os_release ID_LIKE "${IMAGE_LIKE}"
 set_os_release VERSION_ID "${FEDORA_MAJOR_VERSION}"
-set_os_release CPE_NAME "cpe:/o:universal-blue:bluefin"
+set_os_release CPE_NAME "cpe:/o:universal-blue:utah"
 set_os_release HOME_URL "https://projectbluefin.io"
 set_os_release DOCUMENTATION_URL "https://docs.projectbluefin.io"
-set_os_release SUPPORT_URL "https://github.com/projectbluefin/bluefin/issues/"
-set_os_release BUG_REPORT_URL "https://github.com/projectbluefin/bluefin/issues/"
+set_os_release SUPPORT_URL "https://github.com/projectbluefin/utah/issues/"
+set_os_release BUG_REPORT_URL "https://github.com/projectbluefin/utah/issues/"
 set_os_release DEFAULT_HOSTNAME "${IMAGE_PRETTY_NAME,,}"
-set_os_release VERSION_CODENAME "Deinonychus"
+set_os_release VERSION_CODENAME "Utahraptor"
 set_os_release VERSION "${VERSION} (${BASE_IMAGE_NAME^})"
 set_os_release OSTREE_VERSION "${VERSION}"
 set_os_release IMAGE_ID "${IMAGE_NAME}"
@@ -74,4 +75,4 @@ fi
 printf '…\n' >/usr/share/ublue-os/fastfetch-user-count
 printf '…\n' >/usr/share/ublue-os/bazaar-install-count
 
-printf 'Bluefin branding configured for %s (%s)\n' "${IMAGE_NAME}" "${IMAGE_FLAVOR}"
+printf 'Utah branding configured for %s (%s)\n' "${IMAGE_NAME}" "${IMAGE_FLAVOR}"
