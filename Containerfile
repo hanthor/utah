@@ -3,10 +3,15 @@ ARG COMMON_IMAGE=ghcr.io/projectbluefin/common
 ARG COMMON_IMAGE_SHA=sha256:fb943c87866292fb74eb74610e9cd08a1a91fe42e763e28473f3f57cf18f26a5
 ARG BREW_IMAGE=ghcr.io/ublue-os/brew
 ARG BREW_IMAGE_SHA=sha256:8f952ae54585db9f855a306ef365e13609ed7c7944b12b823ba7d5ce8e1a145b
+# Renovate will pin this bootstrap tag to an immutable digest.
+ARG UTAH_PACKAGES_IMAGE=ghcr.io/projectbluefin/utah-packages:latest
 
 FROM ${COMMON_IMAGE}@${COMMON_IMAGE_SHA} AS common
 FROM ${BREW_IMAGE}@${BREW_IMAGE_SHA} AS brew
+FROM ${UTAH_PACKAGES_IMAGE} AS utah_packages
 FROM ${BASE_IMAGE}
+
+ARG UTAH_PACKAGES_IMAGE
 
 ARG IMAGE_NAME=utah
 ARG IMAGE_FLAVOR=main
@@ -26,17 +31,19 @@ COPY packages/utah.toml /usr/share/utah/utah.toml
 COPY packages/hummingbird.repo /etc/yum.repos.d/hummingbird.repo
 COPY packages/fedora-44.repo /etc/yum.repos.d/fedora-44.repo
 COPY packages/nvidia-container.repo /etc/yum.repos.d/nvidia-container.repo
+COPY packages/utah-packages.repo /etc/yum.repos.d/utah-packages.repo
 COPY scripts/install-packages.py /usr/local/libexec/utah-install-packages
 COPY scripts/verify-rpm-contract.py /usr/local/libexec/utah-verify-rpm-contract
 COPY scripts/build-gnome-extensions.sh /usr/local/libexec/utah-build-gnome-extensions
 COPY scripts/install-ogc-kernel.sh /usr/local/libexec/utah-install-ogc-kernel
 COPY scripts/install-nvidia.sh /usr/local/libexec/utah-install-nvidia
 COPY scripts/clean-stage.sh /usr/local/libexec/utah-clean-stage
+COPY scripts/healthcheck-image.sh /usr/local/libexec/utah-healthcheck-image
 COPY --from=common /system_files/shared /tmp/utah-common
 COPY --from=brew /system_files /tmp/utah-brew
 COPY system_files/shared /tmp/utah-local
 
-RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-verify-rpm-contract /usr/local/libexec/utah-build-gnome-extensions /usr/local/libexec/utah-install-ogc-kernel /usr/local/libexec/utah-install-nvidia /usr/local/libexec/utah-clean-stage && \
+RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-verify-rpm-contract /usr/local/libexec/utah-build-gnome-extensions /usr/local/libexec/utah-install-ogc-kernel /usr/local/libexec/utah-install-nvidia /usr/local/libexec/utah-clean-stage /usr/local/libexec/utah-healthcheck-image && \
     cp -a /tmp/utah-common/. / && \
     cp -a /tmp/utah-brew/. / && \
     cp -a /tmp/utah-local/. / && \
@@ -60,12 +67,14 @@ RUN chmod 0755 /usr/local/libexec/utah-install-packages /usr/local/libexec/utah-
 # The package lists live in the manifests, not here.  When they were spelled
 # out in this RUN as well, the two copies drifted and the contract check was
 # asserting a different set than the install had asked for.
-RUN /usr/local/libexec/utah-install-packages \
+RUN --mount=type=bind,from=utah_packages,source=/repository,target=/var/cache/utah-packages,ro \
+    /usr/local/libexec/utah-install-packages \
       /usr/share/utah/bluefin.toml /usr/share/utah/utah.toml && \
     IMAGE_FLAVOR=main /usr/local/libexec/utah-verify-rpm-contract \
       /usr/share/utah/bluefin.toml /usr/share/utah/utah.toml && \
     DNF="$(command -v dnf5 || command -v dnf)" && \
-    "$DNF" clean all && rm -rf /var/cache/libdnf5 /var/cache/dnf
+    "$DNF" clean all && rm -rf /var/cache/libdnf5 /var/cache/dnf && \
+    rm -f /etc/yum.repos.d/utah-packages.repo
 
 # The extensions are the same pinned submodules Bluefin ships. Keeping their
 # build here makes GNOME 51 compatibility visible in the normal image CI path.
@@ -92,6 +101,7 @@ RUN case "${IMAGE_FLAVOR}" in \
 # is the NVIDIA and OGC step, not after the main transaction.
 RUN /usr/local/libexec/utah-clean-stage
 
-RUN bootc container lint --fatal-warnings --skip nonempty-boot
+RUN bootc container lint --fatal-warnings --skip nonempty-boot && \
+    IMAGE_FLAVOR="${IMAGE_FLAVOR}" /usr/local/libexec/utah-healthcheck-image
 
 CMD ["/sbin/init"]
