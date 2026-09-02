@@ -115,3 +115,66 @@ from source, so there is no second implementation to drift.
 Editing either script changes the hash and forces a rebuild, comment-only edits
 included. That is deliberate: the key can only ever rebuild something that did
 not need it, never reuse something stale.
+
+`main` is submitted to the reusable build workflow separately from the three
+kernel flavors (`build_main` and `build_kernel` in `build.yml`), so it starts
+the moment the contract check passes and a cache miss delays only the images
+that consume the cache. The two calls carry different `brand_name` values
+because the reusable workflow keys its own cancel-in-progress concurrency
+group on that name; Utah's Justfile ignores it when naming images.
+
+## Where the build time goes
+
+Measured on hosted `ubuntu-24.04` runners, one run, kernel cache hit. The
+figures are here so the next person does not have to re-derive them before
+deciding what is worth changing.
+
+| Stage | main | nvidia-gaming |
+| --- | ---: | ---: |
+| Runner setup (podman, btrfs storage) | 2 min | 2 min |
+| Pull base and the three source stages | 15 s | 1 min |
+| Eighteen one-file COPY layers (before this was fixed) | 3 min 10 s | 3 min 40 s |
+| Package transaction | 4 min | 4 min 20 s |
+| Extensions, services, branding, contract check | 55 s | 55 s |
+| Flavor step (OGC unpack, NVIDIA userspace) | 40 s, a no-op | 3 min 30 s |
+| Each further layer commit (shim, clean, lint) | 40 s | 45 s |
+| Export, scan, upload (reusable workflow, PR builds) | 3 min | 7 min |
+| **Job wall clock** | **17 min** | **24 min** |
+
+Two things follow. A layer commit walks the whole root filesystem, so the
+number of instructions in the Containerfile is a cost in its own right, which
+is why the sources arrive in as few COPYs as their origins allow and small RUN
+steps are folded into their neighbours. And the per-image build arguments
+(`VERSION` carries the date and the commit) are declared *after* the package
+transaction, because a build argument is part of the cache key of every layer
+declared below it: with them at the top, the registry layer cache could never
+have hit on the expensive layer.
+
+### Why the image is not sharded across runners
+
+The four flavors already run on four runners; that is the parallel dimension,
+and it is exhausted. Within one flavor, every step mutates the same root
+filesystem and depends on the one before it -- packages, then the desktop
+configured on top of them, then the flavor's kernel work, then cleanup and
+lint -- so there is nothing left to hand to a second machine. Building the
+shared prefix once and having the flavors start from it was costed and
+rejected: pushing and pulling that layer takes about as long as the four
+runners take to rebuild it side by side, and pull-request builds cannot push
+to GHCR at all. It would reduce compute minutes, which the free tier does not
+charge public repositories for, and not wall clock, which it does not help.
+
+The one genuinely serial dependency in the workflow, the kernel cache, is
+handled by splitting the matrix (above) rather than by splitting the build.
+The kernel compile itself is sixteen of the cache job's twenty minutes on a
+four-core runner; the NVIDIA module build that follows it is two and a half,
+and only that part could run elsewhere.
+
+### Registry layer cache
+
+`just build-ghcr` passes `--cache-from` for the image's own GHCR package and,
+when `REGISTRY_CACHE_WRITE=1` (set by the reusable workflow for non-PR events
+only), `--cache-to` as well. An unchanged package transaction is then pulled
+rather than rebuilt. Pull-request and local builds read the cache and never
+write it. The cache is off, silently, whenever the package is not readable
+from where the build runs, which is the case until a testing-branch build has
+pushed once.
