@@ -75,6 +75,11 @@ check:
     # config/flavors.json exists to stop: narrowing the build matrix while
     # promote and release still name images nothing produces fails late.
     ! grep -rn 'utah-nvidia\|utah-gaming' .github/workflows/
+    # Nor its own count of them. Promotion asserted `count -eq 4` after it had
+    # already copied whatever it found, so a short set advanced :testing for
+    # the flavors it did reach and failed afterwards.
+    ! grep -nE '\-eq [0-9]+' .github/workflows/post-testing-e2e.yml
+    grep -q 'scripts/flavors.py' .github/workflows/post-testing-e2e.yml
 
 # Verify branding, desktop defaults, first-boot Flatpak policy, and service
 # enablement in an already-composed image. The same verifier runs in the
