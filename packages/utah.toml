@@ -72,8 +72,14 @@ packages = [
 # Bluefin's desktop image adds these to the server base before 40-services.sh
 # enables their units. uupd is downloaded separately because it is published
 # as a release binary rather than an RPM in the Hummingbird repositories.
+#
+# systemd-resolved is not in the Bluefin contract because Fedora's base image
+# already carries it. Hummingbird's bootable base does not: the package exists
+# in their repository but is not installed, so the image had no resolver and
+# configure-services stopped on a unit file that was never there.
 packages = [
     "fwupd",
+    "systemd-resolved",
     "tailscale",
 ]
 
