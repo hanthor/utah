@@ -55,6 +55,11 @@ check:
     python3 -m py_compile scripts/verify-rpm-contract.py
     python3 -m py_compile scripts/check-repo-availability.py
     python3 scripts/install-packages.py --check packages/bluefin.toml
+    # Both scripts compose their package list from sections named one by
+    # one, so a new section in utah.toml can be live in one and invisible
+    # to the other. [services] was unverified that way, and [firmware]
+    # briefly was too.
+    python3 scripts/check-overlay-sections.py
     python3 scripts/verify-rpm-contract.py --check packages/bluefin.toml
     grep -qE 'reusable-build\.yml@(v1|[0-9a-f]{40} # v1)$' .github/workflows/build.yml
     test -f Containerfile.kernel

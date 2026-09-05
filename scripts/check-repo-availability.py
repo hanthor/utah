@@ -85,9 +85,18 @@ def main() -> int:
     overlay = args.overlay or args.manifest.with_name("utah.toml")
 
     unavailable = set(section(overlay, "unavailable"))
+    # Every section that reaches the image, named explicitly. This list has
+    # drifted from install-packages.py's twice: [services] was never checked,
+    # and [firmware] was installed but unverified the moment it was added. A
+    # section missing here is not a loud failure -- it is a package the image
+    # installs that nothing preflights, which is the exact shape of the bug
+    # that left Utah with no firmware at all. Adding a section to utah.toml
+    # means adding it in both places.
     wanted = sorted(
         set(section(args.manifest, "fedora"))
         | set(section(overlay, "gnome"))
+        | set(section(overlay, "firmware"))
+        | set(section(overlay, "services"))
         | set(section(overlay, "build"))
     )
     names: set[str] = set()

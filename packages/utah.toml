@@ -54,27 +54,41 @@ packages = [
 # they are absent from the parity contract in packages/bluefin.toml. Utah's
 # base is Hummingbird's bootc-os, which ships the kernel and no firmware at
 # all -- 262 packages, none of them linux-firmware -- and Hummingbird's
-# repository has no firmware package either. Nothing Requires linux-firmware,
-# so no dependency resolution pulls it in and no gate noticed: the boot test
-# runs under QEMU on virtio, which needs no firmware blobs. The result was an
-# image that reaches GDM and cannot bring up any wifi adapter that loads a
-# blob, which is nearly all of them, nor an AMD, Intel or NVIDIA GPU at full
-# capability.
+# repository has none either. Nothing Requires linux-firmware, so no
+# resolution pulls it in and no gate noticed: the boot test runs under QEMU on
+# virtio, which needs no firmware blobs. The result was an image that reaches
+# GDM and cannot bring up any wifi adapter that loads a blob, which is nearly
+# all of them, nor an AMD, Intel or NVIDIA GPU at full capability.
 #
-# Fedora splits one linux-firmware source into these thirty subpackages by
-# device family. All thirty are listed, which is what parity with Fedora
-# means; together they are roughly 740 MiB. If image size becomes the binding
-# constraint, the datacenter NIC families -- liquidio, mlxsw_spectrum,
-# mrvlprestera, netronome, qed -- and the Qualcomm SoC ones are the obvious
-# trim for an x86_64 desktop, worth about 350 MiB. That is a reduction to
-# decide on, not a default to drift into.
+# This list is Bluefin's, read out of files/pkg-churn.json in
+# projectbluefin/bluefin, which records what that image actually carries. That
+# is the parity target, not "everything Fedora splits out of linux-firmware".
+# Bluefin takes twenty-one of the thirty subpackages and leaves the datacenter
+# NIC families -- liquidio, mlxsw_spectrum, mrvlprestera, netronome, qed -- and
+# the Qualcomm SoC ones behind. Matching it rather than taking the lot saves
+# about 350 MiB, most of that qcom-firmware at 148 MiB and
+# mlxsw_spectrum-firmware at 102 MiB, neither of which an x86_64 desktop
+# loads. Bluefin does keep qcom-wwan-firmware for modems and mt7xxx-firmware
+# for MediaTek wireless while dropping the broader mediatek-firmware; that
+# asymmetry is theirs, and it is copied rather than smoothed over.
+#
+# alsa-sof-firmware is the one entry that is not a linux-firmware subpackage.
+# Sound Open Firmware is what a modern Intel laptop loads before it has audio
+# at all. Dakota agrees strongly enough to give it its own BuildStream
+# component, components/sof-firmware.bst, separate from linux-firmware.
+#
+# Dakota was read too. It curates at file level rather than by package -- 6,810
+# files under components/linux-firmware.bst -- and its set is wider than
+# Bluefin's, carrying qcom, netronome, mellanox and qed. Bluefin is the closer
+# comparison for Utah and the contract this repository already tracks, so it
+# is the one matched.
 packages = [
+    "alsa-sof-firmware",
     "amd-gpu-firmware",
     "amd-ucode-firmware",
     "atheros-firmware",
     "brcmfmac-firmware",
     "cirrus-audio-firmware",
-    "dvb-firmware",
     "intel-audio-firmware",
     "intel-gpu-firmware",
     "intel-vsc-firmware",
@@ -85,18 +99,10 @@ packages = [
     "libertas-firmware",
     "linux-firmware",
     "linux-firmware-whence",
-    "liquidio-firmware",
-    "mediatek-firmware",
-    "mlxsw_spectrum-firmware",
-    "mrvlprestera-firmware",
     "mt7xxx-firmware",
-    "netronome-firmware",
     "nvidia-gpu-firmware",
     "nxpwireless-firmware",
-    "qcom-accel-firmware",
-    "qcom-firmware",
     "qcom-wwan-firmware",
-    "qed-firmware",
     "realtek-firmware",
     "tiwilink-firmware",
 ]
