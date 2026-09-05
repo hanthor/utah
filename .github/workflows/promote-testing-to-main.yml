@@ -16,13 +16,27 @@ permissions:
   statuses: write
 
 jobs:
+  # config/flavors.json is the single source for which images exist. Promoting
+  # or releasing an image the build matrix no longer produces fails late and
+  # confusingly, so this reads the same list the build does.
+  variants:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      list: ${{ steps.resolve.outputs.list }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - id: resolve
+        run: echo "list=$(python3 scripts/flavors.py images)" >> "$GITHUB_OUTPUT"
+
   promote:
-    uses: projectbluefin/actions/.github/workflows/reusable-promote-squash.yml@v1
+    needs: variants
+    uses: projectbluefin/actions/.github/workflows/reusable-promote-squash.yml@eb4c546389f19ad9e42f1af052623de73c620ebb # v1
     with:
       registry: ghcr.io/${{ github.repository_owner }}
-      variants: >-
-        [{"image":"utah"},{"image":"utah-nvidia"},{"image":"utah-gaming"},{"image":"utah-nvidia-gaming"}]
+      variants: ${{ needs.variants.outputs.list }}
       cosign_identity_regexp: >-
-        ^https://github\.com/hanthor/utah/\.github/workflows/build\.yml@refs/heads/testing$
+        ^https://github\.com/projectbluefin/utah/\.github/workflows/build\.yml@refs/heads/testing$
       run_e2e: false
     secrets: inherit
