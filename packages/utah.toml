@@ -72,11 +72,15 @@ packages = [
 # enables their units. uupd is downloaded separately because it is published
 # as a release binary rather than an RPM in the Hummingbird repositories.
 #
-# systemd-resolved is not in the Bluefin contract because Fedora's base image
-# already carries it. Hummingbird's bootable base does not: the package exists
-# in their repository but is not installed, so the image had no resolver and
-# configure-services stopped on a unit file that was never there.
+# systemd-resolved and flatpak are not in the Bluefin contract because Fedora's
+# base image already carries them. Hummingbird's bootable base does not.
+# systemd-resolved exists in their repository but is not installed, so the
+# image had no resolver and configure-services stopped on a unit file that was
+# never there. flatpak is not in their repository at all -- the factory builds
+# it now -- and without it the image declares a Flatpak contract it has no way
+# to install, and the live ISO build stops at "flatpak: command not found".
 packages = [
+    "flatpak",
     "fwupd",
     "systemd-resolved",
     "tailscale",
