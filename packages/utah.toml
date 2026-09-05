@@ -61,6 +61,7 @@ packages = [
 # cmake, or if an extension ever needs it.
 packages = [
     "dbus-devel",
+    "desktop-file-utils",
     "glib2-devel",
     "meson",
     "sassc",
