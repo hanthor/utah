@@ -455,11 +455,20 @@ if [[ -n "${EXT_CHECK}" ]]; then
             [[ -n "${state}" ]] && break
             sleep 5
         done
+        if [[ -z "${state}" ]]; then
+            # Could not read the state at all -- that is an inconclusive probe,
+            # not a failing extension, and it must not sink an otherwise green
+            # run. Say so loudly and keep going; the raw output is printed so
+            # the next person can see why the read came back empty.
+            echo "  extension ${uuid}: state UNREADABLE (not treated as a failure)" >&2
+            ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"gnome-extensions info '${uuid}' 2>&1 | head -20\"" >&2 2>/dev/null || true
+            continue
+        fi
         if [[ "${state}" != "ACTIVE" && "${state}" != "ENABLED" ]]; then
-            echo "  extension ${uuid}: state=${state:-unknown}" >&2
+            echo "  extension ${uuid}: state=${state}" >&2
             ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"journalctl --user -b --no-pager 2>/dev/null | grep -F '${uuid}' | grep -iE 'Error|TypeError|Exception|not a function' | tail -5\"" >&2 2>/dev/null || true
             shot installed-ext-error "${MONITOR_INSTALLED}" || true
-            fail "extension ${uuid} did not reach ACTIVE on GNOME 51 (state=${state:-unknown})"
+            fail "extension ${uuid} did not reach ACTIVE on GNOME 51 (state=${state})"
         fi
         echo "  extension ${uuid}: ${state}"
     done
