@@ -3,8 +3,6 @@
 
 Bluefin built on Fedora Hummingbird. The more ... civilized murder machine.
 
-<img src="https://github.com/user-attachments/assets/962af585-6e2a-4038-ac14-8e54a3189420" alt="alt" width="50%">
-
 > Your day keeps getting worse. Why are there more.
 
 ![alt](https://github.com/user-attachments/assets/56428338-54a0-4376-a53b-5f02f8b101a1)
@@ -21,6 +19,8 @@ Hummingbird](https://packages.redhat.com), which supplies a hardened, fast-movin
 bootable base and no desktop at all. Utah adds the desktop: Bluefin's package
 contract on top, and the GNOME 51 stack built from source because neither
 Hummingbird nor a Fedora release ships it.
+
+<img src="https://github.com/user-attachments/assets/962af585-6e2a-4038-ac14-8e54a3189420" alt="alt" width="40%">
 
 Two repositories, the way `common` and `brew` already work:
 
