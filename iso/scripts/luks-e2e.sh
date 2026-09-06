@@ -445,7 +445,16 @@ if [[ -n "${EXT_CHECK}" ]]; then
         # for "Error" also catches an extension's own deliberate warnings (the
         # GSConnect guard logs one when it degrades the clipboard portal), so
         # trust the state and only surface journal lines as diagnostics.
-        state="$(ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"gnome-extensions info '${uuid}' 2>/dev/null\"" 2>/dev/null | grep -aE '^[[:space:]]*State:' | tail -1 | awk '{print \$NF}' | tr -d '[:space:]' || true)"
+        # gnome-extensions asks the shell over D-Bus, and the shell answers
+        # only once it has finished loading extensions -- which is strictly
+        # after the gnome-shell process appears. Polling here rather than
+        # reading once is the difference between a real verdict and a blank.
+        state=""
+        for _ in $(seq 1 24); do
+            state="$(ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"gnome-extensions info '${uuid}' 2>/dev/null\"" 2>/dev/null | grep -aE '^[[:space:]]*State:' | tail -1 | awk '{print \$NF}' | tr -d '[:space:]' || true)"
+            [[ -n "${state}" ]] && break
+            sleep 5
+        done
         if [[ "${state}" != "ACTIVE" && "${state}" != "ENABLED" ]]; then
             echo "  extension ${uuid}: state=${state:-unknown}" >&2
             ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"journalctl --user -b --no-pager 2>/dev/null | grep -F '${uuid}' | grep -iE 'Error|TypeError|Exception|not a function' | tail -5\"" >&2 2>/dev/null || true
