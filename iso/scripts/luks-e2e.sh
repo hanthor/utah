@@ -204,7 +204,20 @@ echo "  watch the live VM: vnc://127.0.0.1:$((5900 + VNC_LIVE))"
 echo "Waiting for the live environment to accept SSH..."
 for i in $(seq 1 90); do
     if ssh_live true 2>/dev/null; then echo "Live environment is up."; break; fi
-    [[ "$i" -eq 90 ]] && { tail -40 "${SERIAL_LIVE}" >&2 || true; fail "no SSH from the live ISO after 7m30s"; }
+    if [[ "$i" -eq 90 ]]; then
+        tail -40 "${SERIAL_LIVE}" >&2 || true
+        # Much the commonest cause, and it looks nothing like itself: a
+        # non-debug ISO boots perfectly and even starts sshd, but the
+        # liveuser password, PasswordAuthentication and root login are all
+        # gated behind DEBUG=1 in configure-live.sh, so every login is
+        # refused and the symptom is silence.
+        if grep -qa "Reached target.*Graphical" "${SERIAL_LIVE}" 2>/dev/null; then
+            echo "The live system reached its graphical target, so it booted fine" >&2
+            echo "and this is a login failure. Was the ISO built with debug on?" >&2
+            echo "  just iso testing 1     (plain 'just iso testing' has no ssh login)" >&2
+        fi
+        fail "no SSH from the live ISO after 7m30s"
+    fi
     sleep 5
 done
 
