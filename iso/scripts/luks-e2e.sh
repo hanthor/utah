@@ -146,6 +146,24 @@ trap cleanup EXIT
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
+# A failed boot is diagnosed from the units that failed, not from whatever
+# happened to scroll past last. The console keeps printing after a unit fails
+# -- when root is locked, sulogin exits immediately and the boot carries on --
+# so the last 40 lines are usually udev noise rather than the cause. Keep a
+# copy per attempt too: each run overwrites the serial log, so every failure
+# used to destroy the evidence for the one before it.
+diagnose_boot() {
+    local log="$1" keep="${log%.log}-$(date +%Y%m%d-%H%M%S).log"
+    cp -f "${log}" "${keep}" 2>/dev/null && echo "  serial log kept: ${keep}" >&2
+    echo "--- units that failed ---" >&2
+    sed 's/\x1b\[[0-9;:]*m//g' "${log}" 2>/dev/null \
+        | grep -aE 'Dependency failed|Failed to start|Failed to mount|Timed out waiting|job .* timed out|Started .*emergency' \
+        | tail -30 >&2 || echo "  (none recorded)" >&2
+    echo "--- last 120 console lines ---" >&2
+    tail -120 "${log}" >&2 || true
+}
+
+
 # `just try-installed` boots an overlay backed by the very disk this test is
 # about to recreate, out of the same work directory. Leaving it running while
 # phase 3 rewrites install.qcow2 corrupts what phase 4 then boots, and the
@@ -360,18 +378,34 @@ fi
 
 echo "=== Phase 6/6: log in and prove the desktop starts ==="
 echo "Waiting for the installed system to reach the graphical target..."
+emergency_seen=""
 for i in $(seq 1 90); do
     if grep -qa "Reached target.*Graphical" "${SERIAL_INSTALLED}" 2>/dev/null; then
         echo "  serial: reached the graphical target"; break
     fi
-    if grep -qaE "Emergency mode|You are in emergency mode|Kernel panic" "${SERIAL_INSTALLED}" 2>/dev/null; then
-        shot installed-emergency "${MONITOR_INSTALLED}" || true
-        tail -40 "${SERIAL_INSTALLED}" >&2
-        fail "the installed system dropped to an emergency shell"
+
+    if grep -qa "Kernel panic" "${SERIAL_INSTALLED}" 2>/dev/null; then
+        shot installed-panic "${MONITOR_INSTALLED}" || true
+        diagnose_boot "${SERIAL_INSTALLED}"
+        fail "the installed system panicked"
     fi
-    [[ "$i" -eq 90 ]] && { tail -40 "${SERIAL_INSTALLED}" >&2; fail "no graphical target after 7m30s"; }
+    if [[ -z "${emergency_seen}" ]] \
+       && grep -qaE "Emergency mode|You are in emergency mode" "${SERIAL_INSTALLED}" 2>/dev/null; then
+        # Do not give up here. emergency.service runs sulogin, and this image
+        # locks root, so sulogin exits at once and the boot continues -- it may
+        # still reach the graphical target. Record the evidence and keep
+        # watching; the verdict comes from whether a unit failed, below.
+        emergency_seen=1
+        shot installed-emergency "${MONITOR_INSTALLED}" || true
+    fi
+    [[ "$i" -eq 90 ]] && { diagnose_boot "${SERIAL_INSTALLED}"; fail "no graphical target after 7m30s"; }
     sleep 5
 done
+
+if [[ -n "${emergency_seen}" ]]; then
+    diagnose_boot "${SERIAL_INSTALLED}"
+    fail "the installed system entered emergency mode during boot (it carried on, because root is locked and sulogin exits immediately -- see the failed units above)"
+fi
 
 echo "Waiting for sshd on the installed system..."
 for i in $(seq 1 60); do
@@ -451,18 +485,21 @@ if [[ -n "${EXT_CHECK}" ]]; then
         # reading once is the difference between a real verdict and a blank.
         state=""
         for _ in $(seq 1 24); do
-            state="$(ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"gnome-extensions info '${uuid}' 2>/dev/null\"" 2>/dev/null | grep -aE '^[[:space:]]*State:' | tail -1 | awk '{print \$NF}' | tr -d '[:space:]' || true)"
+            state="$(ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"gnome-extensions info '${uuid}' 2>/dev/null\"" 2>/dev/null | grep -aE '^[[:space:]]*State:' | tail -1 | awk '{print $NF}' | tr -d '[:space:]' || true)"
             [[ -n "${state}" ]] && break
             sleep 5
         done
         if [[ -z "${state}" ]]; then
-            # Could not read the state at all -- that is an inconclusive probe,
-            # not a failing extension, and it must not sink an otherwise green
-            # run. Say so loudly and keep going; the raw output is printed so
-            # the next person can see why the read came back empty.
-            echo "  extension ${uuid}: state UNREADABLE (not treated as a failure)" >&2
+            # Two minutes of polling a shell that is already up and still no
+            # state is not an inconclusive probe -- it means the assertion is
+            # not running, which is worse than a red run because it reads as
+            # green. (It did exactly that once: an over-escaped awk sent
+            # `\$NF' to awk, every read came back empty, and the check passed
+            # while asserting nothing.) Fail, and print the raw output.
+            echo "  extension ${uuid}: state could not be read" >&2
             ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"gnome-extensions info '${uuid}' 2>&1 | head -20\"" >&2 2>/dev/null || true
-            continue
+            shot installed-ext-unreadable "${MONITOR_INSTALLED}" || true
+            fail "could not read the state of extension ${uuid}"
         fi
         if [[ "${state}" != "ACTIVE" && "${state}" != "ENABLED" ]]; then
             echo "  extension ${uuid}: state=${state}" >&2
@@ -501,7 +538,14 @@ echo "Screenshots: ${SHOTS}"
 DOCS="${UTAH_E2E_DOCS:-${ROOT}/docs/verification}"
 if [[ -n "${DOCS}" && "${DOCS}" != "none" ]]; then
     mkdir -p "${DOCS}/screenshots"
-    cp -f "${SHOTS}"/*.png "${DOCS}/screenshots/" 2>/dev/null || true
+    # Only the shots this record actually shows. The work directory also
+    # accumulates failure shots (installed-emergency, luks-failed, ...) from
+    # earlier attempts, and a glob swept those into the verification record --
+    # which is meant to be the evidence a run passed, not a pile of the ways
+    # previous ones did not.
+    for _s in live-desktop installed-greeter installed-desktop installed-fastfetch; do
+        cp -f "${SHOTS}/${_s}.png" "${DOCS}/screenshots/" 2>/dev/null || true
+    done
     captured="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     iso_size="$(du -h "${ISO}" | cut -f1)"
     cat > "${DOCS}/README.md" <<EOF
@@ -596,7 +640,7 @@ else:
         if line.startswith("# "):
             insert_at = i + 1
             break
-    lines.insert(insert_at, "\n" + block + "\n")
+    lines.insert(insert_at, "\n" + block + "\n\n")
     text = "".join(lines)
 open(readme, "w", encoding="utf-8").write(text)
 print(f"updated {readme} with the latest verification screenshot")
