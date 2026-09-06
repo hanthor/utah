@@ -30,6 +30,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # The account the installer creates, and the one phase 6 logs in as.
 TEST_USER="${UTAH_E2E_USER:-utahtest}"
 TEST_PASSWORD="${UTAH_E2E_PASSWORD:-utahtest}"
+# The terminal the last screenshot opens. --system matters: flatpak otherwise
+# consults a user installation that does not exist and aborts instead of
+# falling back.
+TERMINAL_APP="${UTAH_E2E_TERMINAL:-org.tunaos.BlueShell}"
 
 ISO="$(realpath "${ISO}")"
 mkdir -p "${WORK}"
@@ -335,6 +339,28 @@ ssh_target 'systemctl is-active gdm.service' 2>/dev/null | grep -qx active \
 echo "  gdm.service: active"
 shot installed-greeter "${MONITOR_INSTALLED}"
 
+# Arrange for a terminal to open as part of the session that is about to
+# start. Launching a GTK application over SSH does not work and cannot be made
+# to: the session bus refuses to let it register --
+#   error registering application: GDBus.Error:...AccessDenied
+#   error: ApplicationRegisterFailed
+# -- so it never maps a window, and the attempt leaves a half-made user flatpak
+# repo behind that breaks every later flatpak call for that account. An
+# autostart entry is how a session is meant to be told to run something, and it
+# runs inside the session with a bus and a display of its own.
+echo "Arranging for a terminal to open in the session..."
+ssh_target "
+    grep -q fastfetch ~/.bashrc 2>/dev/null || echo fastfetch >> ~/.bashrc
+    mkdir -p ~/.config/autostart
+    cat > ~/.config/autostart/${TERMINAL_APP}.desktop <<EOF
+[Desktop Entry]
+Type=Application
+Name=Terminal
+Exec=flatpak --system run ${TERMINAL_APP}
+X-GNOME-Autostart-enabled=true
+EOF
+" 2>/dev/null || echo "  could not write the autostart entry" >&2
+
 # Type the password at the greeter. GDM offers the single account already
 # selected, so Enter opens the password field and the password submits it.
 echo "Logging in at the greeter as ${TEST_USER}..."
@@ -371,17 +397,6 @@ shot installed-desktop "${MONITOR_INSTALLED}"
 # shot a human actually reads: it names the OS, the kernel and the desktop
 # from inside the installed system, so one image carries what half a dozen
 # assertions above prove separately.
-echo "Opening BlueShell with fastfetch..."
-ssh_target "grep -q 'fastfetch' ~/.bashrc 2>/dev/null || echo fastfetch >> ~/.bashrc" 2>/dev/null || true
-# The graphical session's bus and display are not in an SSH environment, so
-# hand them over explicitly; without them the terminal has nowhere to appear.
-ssh_target "
-    export XDG_RUNTIME_DIR=/run/user/\$(id -u)
-    export DBUS_SESSION_BUS_ADDRESS=unix:path=\${XDG_RUNTIME_DIR}/bus
-    export WAYLAND_DISPLAY=\$(basename \$(ls -t \${XDG_RUNTIME_DIR}/wayland-* 2>/dev/null | grep -v lock | head -1) 2>/dev/null)
-    setsid flatpak run org.tunaos.BlueShell >/dev/null 2>&1 &
-    sleep 1
-" 2>/dev/null || echo "  could not launch BlueShell (is the flatpak installed?)" >&2
 sleep 20
 shot installed-fastfetch "${MONITOR_INSTALLED}"
 
