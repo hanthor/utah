@@ -42,6 +42,11 @@ SERIAL_LIVE="${WORK}/live-serial.log"
 SERIAL_INSTALLED="${WORK}/installed-serial.log"
 SSH_PORT="${UTAH_E2E_SSH_PORT:-2222}"
 SSH_PORT_INSTALLED=$((SSH_PORT + 1))
+# Both VMs keep a VNC display open so a run can be watched rather than waited
+# on. Screendumps come from the monitor either way, so this costs nothing and
+# turns "it hung somewhere in phase 5" into something you can just look at.
+VNC_LIVE="${UTAH_E2E_VNC_LIVE:-2}"
+VNC_INSTALLED="${UTAH_E2E_VNC_INSTALLED:-3}"
 VARS="${WORK}/ovmf-vars.fd"
 
 QEMU="$(command -v qemu-system-x86_64 /usr/libexec/qemu-kvm 2>/dev/null | head -1)"
@@ -156,8 +161,10 @@ cp -f "${OVMF_VARS_SRC}" "${VARS}"
     -device virtio-net-pci,netdev=net0 \
     -monitor "unix:${MONITOR_LIVE},server,nowait" \
     -serial "file:${SERIAL_LIVE}" \
-    -display none -daemonize -pidfile "${WORK}/live.pid"
+    -vnc "127.0.0.1:${VNC_LIVE}" \
+    -daemonize -pidfile "${WORK}/live.pid"
 qemu_pids+=("$(cat "${WORK}/live.pid")")
+echo "  watch the live VM: vnc://127.0.0.1:$((5900 + VNC_LIVE))"
 
 echo "Waiting for the live environment to accept SSH..."
 for i in $(seq 1 90); do
@@ -284,8 +291,10 @@ cp -f "${VARS}" "${WORK}/ovmf-vars-installed.fd"
     -device virtio-net-pci,netdev=net0 \
     -monitor "unix:${MONITOR_INSTALLED},server,nowait" \
     -serial "file:${SERIAL_INSTALLED}" \
-    -display none -daemonize -pidfile "${WORK}/installed.pid"
+    -vnc "127.0.0.1:${VNC_INSTALLED}" \
+    -daemonize -pidfile "${WORK}/installed.pid"
 qemu_pids+=("$(cat "${WORK}/installed.pid")")
+echo "  watch the installed VM: vnc://127.0.0.1:$((5900 + VNC_INSTALLED))"
 sleep 5
 
 echo "=== Phase 5/6: answer the passphrase prompt ==="
@@ -358,6 +367,24 @@ echo "  session type: ${session_type:-unknown}"
 sleep 10   # let the shell finish drawing before the screenshot
 shot installed-desktop "${MONITOR_INSTALLED}"
 
+# Open a terminal on the desktop and leave fastfetch on screen. This is the
+# shot a human actually reads: it names the OS, the kernel and the desktop
+# from inside the installed system, so one image carries what half a dozen
+# assertions above prove separately.
+echo "Opening BlueShell with fastfetch..."
+ssh_target "grep -q 'fastfetch' ~/.bashrc 2>/dev/null || echo fastfetch >> ~/.bashrc" 2>/dev/null || true
+# The graphical session's bus and display are not in an SSH environment, so
+# hand them over explicitly; without them the terminal has nowhere to appear.
+ssh_target "
+    export XDG_RUNTIME_DIR=/run/user/\$(id -u)
+    export DBUS_SESSION_BUS_ADDRESS=unix:path=\${XDG_RUNTIME_DIR}/bus
+    export WAYLAND_DISPLAY=\$(basename \$(ls -t \${XDG_RUNTIME_DIR}/wayland-* 2>/dev/null | grep -v lock | head -1) 2>/dev/null)
+    setsid flatpak run org.tunaos.BlueShell >/dev/null 2>&1 &
+    sleep 1
+" 2>/dev/null || echo "  could not launch BlueShell (is the flatpak installed?)" >&2
+sleep 20
+shot installed-fastfetch "${MONITOR_INSTALLED}"
+
 echo
 echo "PASS: Utah installed to an encrypted disk, unlocked, and ${TEST_USER} logged"
 echo "      in to a GNOME session on it."
@@ -420,6 +447,12 @@ graphical target. This is what proves the boot did not stop at a console.
 
 \`${TEST_USER}\`'s GNOME session, entered by typing the password at the
 greeter above.
+
+### A terminal on the installed system
+![fastfetch](screenshots/installed-fastfetch.png)
+
+BlueShell running fastfetch, which reports the OS, kernel and desktop from
+inside the system this test just built.
 EOF
     echo "Verification record: ${DOCS}/README.md"
 fi
