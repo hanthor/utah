@@ -8,7 +8,7 @@ the check beside it passed.
 
 | | |
 | --- | --- |
-| Captured | 2026-09-06T09:54:32Z |
+| Captured | 2026-09-06T18:12:30Z |
 | Live ISO | `utah-live.iso`, 7.7G |
 | Installed image | `ghcr.io/projectbluefin/utah:testing` |
 | Root filesystem | btrfs on LUKS2, passphrase unlock |
