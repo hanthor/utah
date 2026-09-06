@@ -15,7 +15,12 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 mkdir -p "$(dirname "${OUTPUT_ISO}")"
 OUTPUT_ISO="$(realpath "${OUTPUT_ISO}")"
 LIVE_IMAGE="localhost/utah-live:testing"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/utah-iso.XXXXXX")"
+# Not TMPDIR, and not /tmp. Assembly stages an uncompressed squashfs root of
+# well over 13G, and /tmp is a tmpfs sized to a fraction of RAM -- the build
+# gets most of the way through and then dies in a heap of "No space left on
+# device" from cp, which reads as a broken image rather than a full staging
+# area. Stage on real disk; UTAH_ISO_WORKDIR to put it somewhere else.
+WORK="$(mktemp -d "${UTAH_ISO_WORKDIR:-/var/tmp}/utah-iso.XXXXXX")"
 # The assembly step below runs under `podman unshare` and writes a squashfs
 # root whose files belong to subordinate uids. Outside that namespace they are
 # unremovable, so a plain rm here fails with Permission denied on every one of
