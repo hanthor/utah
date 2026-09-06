@@ -52,8 +52,9 @@ and not otherwise, so it is a hash of exactly those inputs (header comment,
   cache is built from.
 - `scripts/install-ogc-kernel.sh` and `scripts/install-nvidia.sh`, whole
   files, comments included -- the two scripts that do the building.
-- `packages/hummingbird.repo` -- the repositories the toolchain comes from;
-  a different compiler produces a different kernel.
+- `packages/hummingbird.repo` and `packages/fedora-44.repo` -- the repositories
+  the toolchain comes from (Fedora 44 is builder-only); a different compiler
+  produces a different kernel.
 
 Editing either script changes the hash and forces a rebuild, comment-only
 edits included. That is deliberate: the key can only ever rebuild something

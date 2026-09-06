@@ -39,6 +39,13 @@ In summary:
   layer uses it or not: with `VERSION` at the top, the package transaction
   missed the registry layer cache on every commit, since `VERSION` carries
   the date and the commit. Nothing above the branding step ever sees them.
+- `ARG PACKAGE_IMAGE_REF=${PACKAGE_IMAGE}@${PACKAGE_IMAGE_SHA}` defaults to
+  the digest-pinned OCI package repository for reproducible CI builds, while
+  allowing local composition to inject a local image from containers-storage
+  via `just build-local`.
+- External executable release assets (such as `uupd`) are pinned by version
+  and verified with explicit sha256 checksums (`UUPD_SHA256`) before
+  extraction.
 
 ## Where the build time goes
 

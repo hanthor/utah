@@ -77,6 +77,12 @@ its `metadata.json`. It runs in two modes from the same script:
   `/usr/local/libexec/utah-verify-gnome-extensions`, right after
   `utah-build-gnome-extensions`.
 
+Building GSConnect runs meson install. Because `desktop-file-utils` is not
+published by Hummingbird or Utah's repository, `scripts/build-gnome-extensions.sh`
+disables GSConnect's `update_desktop_database` meson post-install hook to avoid
+failing on the missing utility. MIME and schema databases are handled by the
+system and glib-compile-schemas.
+
 ## Services and login defaults
 
 Hummingbird defaults to a server preset and disables unlisted services, so
@@ -86,6 +92,11 @@ enables GDM, firmware updates, Tailscale, uupd, user setup and resolved,
 configures authselect, and removes the extension build toolchain before
 cleanup (Containerfile RUN comment; originated in `docs/building.md`'s former
 design section and now lives in this skill).
+
+Hummingbird's base does not include `systemd-resolved` by default; it is listed
+under `[services]` in `packages/utah.toml` and configured in
+`scripts/configure-services.sh`, which also disables `PrivateTmp` on
+`systemd-resolved.service` for bootc early-boot DNS resolution.
 
 ## The verifiers run twice
 
