@@ -279,14 +279,24 @@ echo "Install complete. Powering the live VM down..."
 #   boot.mount
 monitor "${MONITOR_LIVE}" "system_powerdown" || true
 live_pid="$(cat "${WORK}/live.pid" 2>/dev/null || true)"
-for i in $(seq 1 60); do
+# Ten minutes, not one. This guest genuinely takes minutes to stop: it unmounts
+# /boot at around t+425s, and forcing it at 60s cut the flush in half, leaving
+# an ext4 the installed system could not probe --
+#   Timed out waiting for device /dev/disk/by-uuid/... ; boot.mount failed
+# which is the emergency shell this test kept hitting. Waiting is cheap; a
+# corrupted disk costs a whole run and looks like an image bug.
+shutdown_deadline=600
+for ((i = 0; i < shutdown_deadline; i++)); do
     kill -0 "${live_pid}" 2>/dev/null || break
-    [[ "$i" -eq 60 ]] && {
-        echo "  live VM did not shut down in 60s; forcing it"
-        monitor "${MONITOR_LIVE}" "quit" || true
-    }
+    if (( i > 0 && i % 60 == 0 )); then
+        echo "  still shutting down (${i}s)..."
+    fi
     sleep 1
 done
+if kill -0 "${live_pid}" 2>/dev/null; then
+    echo "  live VM did not shut down in ${shutdown_deadline}s; forcing it" >&2
+    monitor "${MONITOR_LIVE}" "quit" || true
+fi
 for i in $(seq 1 15); do
     kill -0 "${live_pid}" 2>/dev/null || break
     sleep 1
