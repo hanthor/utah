@@ -4,6 +4,9 @@ ARG BASE_IMAGE=quay.io/hummingbird-community/bootc-os:latest@sha256:c5539f9ed4d9
 # against the exact package set it consumes.
 ARG PACKAGE_IMAGE=ghcr.io/projectbluefin/utah-packages
 ARG PACKAGE_IMAGE_SHA=sha256:2848c60d51fc6d75c3c89b246aad0e5ebf1fe84c5b7696203f02f14727bd158b
+# CI keeps PACKAGE_IMAGE_SHA pinned. PACKAGE_IMAGE_REF supports a local image
+# in containers-storage, where no registry digest is available.
+ARG PACKAGE_IMAGE_REF=${PACKAGE_IMAGE}@${PACKAGE_IMAGE_SHA}
 ARG COMMON_IMAGE=ghcr.io/projectbluefin/common
 ARG COMMON_IMAGE_SHA=sha256:fb943c87866292fb74eb74610e9cd08a1a91fe42e763e28473f3f57cf18f26a5
 ARG BREW_IMAGE=ghcr.io/ublue-os/brew
@@ -11,7 +14,7 @@ ARG BREW_IMAGE_SHA=sha256:8f952ae54585db9f855a306ef365e13609ed7c7944b12b823ba7d5
 
 FROM ${COMMON_IMAGE}@${COMMON_IMAGE_SHA} AS common
 FROM ${BREW_IMAGE}@${BREW_IMAGE_SHA} AS brew
-FROM ${PACKAGE_IMAGE}@${PACKAGE_IMAGE_SHA} AS packages
+FROM ${PACKAGE_IMAGE_REF} AS packages
 FROM ${BASE_IMAGE}
 
 # Layer discipline, because it is where the build time goes.
@@ -124,7 +127,11 @@ ARG SHA_HEAD_SHORT=unknown
 # ENABLE_SSHD=1, following tunaOS's debug-image convention.
 ARG ENABLE_SSHD=0
 # Renovate can update this pinned release independently of the base image.
+# UUPD_SHA256 is the x86_64 tarball digest from the release's published
+# uupd_<version>_checksums.txt; a mutable download that executed in the image
+# is otherwise unverified. Both move together, so Renovate updates both.
 ARG UUPD_VERSION=v1.4.0
+ARG UUPD_SHA256=c7463f193cd35b92cde2ee05496501d6ac13808899bd26e17e027b7ee9ee1acc
 
 # Hummingbird defaults to a server preset and disables unlisted services.
 # configure-services is the Utah equivalent of bluefin-lts's 40-services.sh:
@@ -139,7 +146,9 @@ ARG UUPD_VERSION=v1.4.0
 # and cost forty seconds to commit a few megabytes.
 RUN mkdir -p /tmp/uupd && \
     curl -fsSL "https://github.com/ublue-os/uupd/releases/download/${UUPD_VERSION}/uupd_Linux_x86_64.tar.gz" \
-      | tar -xzf - -C /tmp/uupd && \
+      -o /tmp/uupd/uupd_Linux_x86_64.tar.gz && \
+    echo "${UUPD_SHA256}  /tmp/uupd/uupd_Linux_x86_64.tar.gz" | sha256sum --check --strict && \
+    tar -xzf /tmp/uupd/uupd_Linux_x86_64.tar.gz -C /tmp/uupd && \
     curl -fsSL "https://raw.githubusercontent.com/ublue-os/uupd/${UUPD_VERSION}/uupd.service" \
       -o /tmp/uupd/uupd.service && \
     curl -fsSL "https://raw.githubusercontent.com/ublue-os/uupd/${UUPD_VERSION}/uupd.timer" \

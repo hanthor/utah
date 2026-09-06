@@ -73,6 +73,17 @@ renders in the noVNC web console.
 Override `BASE_DIR`, `VM_RAM`, or `VM_CPUS` when needed -- they are Justfile
 variables read from the environment (defaults `output`, `8192`, `4`).
 
+## Composing with local packages
+
+When iterating on package builds locally before publication, use:
+
+```bash
+just build-local testing localhost/utah-packages:local-merged
+```
+
+This runs the production `Containerfile` against a package repository image
+already present in local containers-storage via `PACKAGE_IMAGE_REF`.
+
 ## Local-only SSH diagnostics
 
 Published images keep SSH disabled. Set `ENABLE_SSHD=1` only for a local
