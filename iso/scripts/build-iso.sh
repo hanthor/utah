@@ -74,21 +74,29 @@ mkdir -p "${SQUASHFS_ROOT}"
 cp -a "${MOUNT}/." "${SQUASHFS_ROOT}/"
 
 PAYLOAD_ARCHIVE="${WORK}/utah-payload.oci.tar"
-PAYLOAD_STORE="${WORK}/vfs-store"
-STORAGE_CONF="${WORK}/vfs-storage.conf"
+PAYLOAD_STORE="${WORK}/payload-store"
+STORAGE_CONF="${WORK}/payload-storage.conf"
 mkdir -p "${PAYLOAD_STORE}"
-printf '[storage]\ndriver = "vfs"\nrunroot = "/tmp/cs-runroot"\ngraphroot = "/vfs-store"\n' >"${STORAGE_CONF}"
+# overlay, and /usr/lib/containers/storage, because that is what the image
+# already resolves to. Hummingbird ships a vendor drop-in
+# (/usr/share/containers/storage.conf.d/00-vendor.conf) that sets
+# driver = "overlay", and drop-ins are applied after /etc/containers/storage.conf
+# -- so a storage.conf written into the live layer cannot move the driver, and
+# podman looks for images in the vendor imagestore no matter what the live
+# environment asks for. Writing the payload anywhere else means the installer
+# does not find it and falls back to pulling from a registry.
+printf '[storage]\ndriver = "overlay"\nrunroot = "/tmp/cs-runroot"\ngraphroot = "/payload-store"\n' >"${STORAGE_CONF}"
 echo "Embedding ${PUBLISHED_IMAGE} for offline installation"
 skopeo copy --remove-signatures \
     "containers-storage:${PAYLOAD_IMAGE}" \
     "oci-archive:${PAYLOAD_ARCHIVE}:${PUBLISHED_IMAGE}"
 podman run --rm --privileged \
     -v "${PAYLOAD_ARCHIVE}:/payload.oci.tar:ro" \
-    -v "${PAYLOAD_STORE}:/vfs-store" \
+    -v "${PAYLOAD_STORE}:/payload-store" \
     -v "${STORAGE_CONF}:/tmp/storage.conf:ro" \
     "${LIVE_IMAGE}" sh -c "mkdir -p /tmp/cs-runroot /var/tmp && CONTAINERS_STORAGE_CONF=/tmp/storage.conf skopeo copy oci-archive:/payload.oci.tar:${PUBLISHED_IMAGE} containers-storage:${PUBLISHED_IMAGE}"
-mkdir -p "${SQUASHFS_ROOT}/var/lib/containers/storage"
-cp -a "${PAYLOAD_STORE}/." "${SQUASHFS_ROOT}/var/lib/containers/storage/"
+mkdir -p "${SQUASHFS_ROOT}/usr/lib/containers/storage"
+cp -a "${PAYLOAD_STORE}/." "${SQUASHFS_ROOT}/usr/lib/containers/storage/"
 rm -rf "${PAYLOAD_ARCHIVE}" "${PAYLOAD_STORE}" "${STORAGE_CONF}"
 
 SQUASHFS="${WORK}/squashfs.img"
