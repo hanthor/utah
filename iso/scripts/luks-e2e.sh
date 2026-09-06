@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
-# Install Utah from its live ISO onto an encrypted disk, then boot it.
+# Install Utah from its live ISO onto an encrypted disk, then log in to it.
 #
-# Four phases, each of which can fail the test on its own:
+# Six phases, each of which can fail the test on its own:
 #   1. boot the live ISO in QEMU with one blank disk attached
-#   2. run the installer (fisherman) over SSH with a LUKS passphrase recipe
-#   3. boot the installed disk with no ISO, so it must come up on its own
-#   4. answer Plymouth's passphrase prompt and confirm the system finishes
-#      booting rather than dropping to an emergency shell
+#   2. prove the live session reached a graphical desktop, not just a shell
+#   3. run the installer with a LUKS passphrase and a user account
+#   4. boot the installed disk with no ISO, so it must come up on its own
+#   5. answer Plymouth's passphrase prompt
+#   6. log in at the GDM greeter and prove a GNOME session is running
 #
-# Phase 4 is the reason this exists: an image can install perfectly and still
-# be unbootable if its initramfs cannot open the root volume.
+# Phases 2 and 6 are the point. An image can install perfectly, unlock
+# perfectly, and still be useless if the desktop never starts -- and a boot
+# that stops at a text console looks identical to a working one if all you
+# check is that the machine came up.
 #
-# The live ISO must be a debug build (`just iso testing 1`) because phase 2
-# drives the installer over SSH, which only a debug ISO enables.
+# Every phase writes a PNG screenshot under the work directory, so a failure
+# can be looked at rather than guessed at.
+#
+# The live ISO must be a debug build (`just iso testing 1`): phases 2 and 3
+# drive the live environment over SSH, which only a debug ISO enables.
 set -euo pipefail
 
 ISO="${1:?live ISO path is required}"
@@ -21,14 +27,21 @@ PASSPHRASE="${3:-testpassphrase}"
 WORK="${UTAH_E2E_WORK:-/var/tmp/utah-luks-e2e}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+# The account the installer creates, and the one phase 6 logs in as.
+TEST_USER="${UTAH_E2E_USER:-utahtest}"
+TEST_PASSWORD="${UTAH_E2E_PASSWORD:-utahtest}"
+
 ISO="$(realpath "${ISO}")"
 mkdir -p "${WORK}"
+SHOTS="${WORK}/screenshots"
+mkdir -p "${SHOTS}"
 INSTALL_DISK="${WORK}/install.qcow2"
 MONITOR_LIVE="${WORK}/live-monitor.sock"
 MONITOR_INSTALLED="${WORK}/installed-monitor.sock"
 SERIAL_LIVE="${WORK}/live-serial.log"
 SERIAL_INSTALLED="${WORK}/installed-serial.log"
 SSH_PORT="${UTAH_E2E_SSH_PORT:-2222}"
+SSH_PORT_INSTALLED=$((SSH_PORT + 1))
 VARS="${WORK}/ovmf-vars.fd"
 
 QEMU="$(command -v qemu-system-x86_64 /usr/libexec/qemu-kvm 2>/dev/null | head -1)"
@@ -58,6 +71,10 @@ SSH_OPTS=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
           -o ServerAliveInterval=30 -o ServerAliveCountMax=20)
 ssh_live() { sshpass -p live ssh "${SSH_OPTS[@]}" -p "${SSH_PORT}" liveuser@127.0.0.1 "$@"; }
 scp_live() { sshpass -p live scp "${SSH_OPTS[@]}" -P "${SSH_PORT}" "$@"; }
+ssh_target() {
+    sshpass -p "${TEST_PASSWORD}" ssh "${SSH_OPTS[@]}" \
+        -p "${SSH_PORT_INSTALLED}" "${TEST_USER}@127.0.0.1" "$@"
+}
 
 monitor() {
     python3 - "$1" "$2" <<'PY'
@@ -71,6 +88,45 @@ with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
 PY
 }
 
+# A screenshot nobody can open is not evidence. QEMU writes PPM, so convert to
+# PNG when an encoder is available and keep the PPM otherwise, rather than
+# failing a passing test over a missing tool.
+shot() {
+    local label="$1" sock="$2"
+    local ppm="${SHOTS}/${label}.ppm" png="${SHOTS}/${label}.png"
+    monitor "${sock}" "screendump ${ppm}" || return 0
+    sleep 1
+    if command -v ffmpeg >/dev/null 2>&1 && [[ -s "${ppm}" ]]; then
+        if ffmpeg -y -loglevel error -i "${ppm}" "${png}" 2>/dev/null; then
+            rm -f "${ppm}"
+            echo "  screenshot: ${png}"
+            return 0
+        fi
+    fi
+    echo "  screenshot: ${ppm}"
+}
+
+# Type a string at whatever has focus, then Enter. Same mechanism the LUKS
+# unlock uses, because the GDM greeter is equally invisible to the serial port.
+send_keys() {
+    local sock="$1" text="$2" ch key i
+    for (( i=0; i<${#text}; i++ )); do
+        ch="${text:i:1}"
+        case "${ch}" in
+            [a-z0-9]) key="${ch}" ;;
+            [A-Z]) key="shift-$(printf '%s' "${ch}" | tr '[:upper:]' '[:lower:]')" ;;
+            "-") key="minus" ;;
+            "_") key="shift-minus" ;;
+            ".") key="dot" ;;
+            " ") key="spc" ;;
+            *) echo "  no key mapping for '${ch}', skipping" >&2; continue ;;
+        esac
+        monitor "${sock}" "sendkey ${key}" || true
+        sleep 0.05
+    done
+    monitor "${sock}" "sendkey ret" || true
+}
+
 qemu_pids=()
 cleanup() {
     for pid in "${qemu_pids[@]:-}"; do
@@ -79,7 +135,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "=== Phase 1/4: boot the live ISO ==="
+fail() { echo "FAIL: $*" >&2; exit 1; }
+
+echo "=== Phase 1/6: boot the live ISO ==="
 rm -f "${INSTALL_DISK}" "${MONITOR_LIVE}" "${MONITOR_INSTALLED}" \
       "${SERIAL_LIVE}" "${SERIAL_INSTALLED}"
 qemu-img create -f qcow2 "${INSTALL_DISK}" 64G >/dev/null
@@ -104,16 +162,48 @@ qemu_pids+=("$(cat "${WORK}/live.pid")")
 echo "Waiting for the live environment to accept SSH..."
 for i in $(seq 1 90); do
     if ssh_live true 2>/dev/null; then echo "Live environment is up."; break; fi
-    if [[ "$i" -eq 90 ]]; then
-        echo "ERROR: no SSH after 7m30s" >&2
-        tail -40 "${SERIAL_LIVE}" >&2 || true
-        exit 1
-    fi
+    [[ "$i" -eq 90 ]] && { tail -40 "${SERIAL_LIVE}" >&2 || true; fail "no SSH from the live ISO after 7m30s"; }
     sleep 5
 done
-monitor "${MONITOR_LIVE}" "screendump ${WORK}/screen-live.ppm" || true
 
-echo "=== Phase 2/4: install onto an encrypted disk ==="
+echo "=== Phase 2/6: prove the live session reached a desktop ==="
+# The live ISO autologins liveuser into GNOME. If that silently degraded to a
+# text console the installer would still be reachable over SSH and every other
+# check here would pass, so assert the session explicitly.
+for i in $(seq 1 60); do
+    if ssh_live 'systemctl is-active graphical.target' 2>/dev/null | grep -qx active; then break; fi
+    [[ "$i" -eq 60 ]] && { shot live-no-desktop "${MONITOR_LIVE}" || true; fail "live session never reached graphical.target"; }
+    sleep 5
+done
+echo "  graphical.target: active"
+
+ssh_live 'systemctl is-active gdm.service' 2>/dev/null | grep -qx active \
+    || fail "gdm is not running in the live session"
+echo "  gdm.service: active"
+
+for i in $(seq 1 30); do
+    if ssh_live 'pgrep -u liveuser -x gnome-shell >/dev/null' 2>/dev/null; then break; fi
+    [[ "$i" -eq 30 ]] && { shot live-no-shell "${MONITOR_LIVE}" || true; fail "no gnome-shell running for liveuser"; }
+    sleep 5
+done
+echo "  gnome-shell: running as liveuser"
+
+live_session_type="$(ssh_live "loginctl show-session \$(loginctl show-user liveuser -p Display --value) -p Type --value" 2>/dev/null || true)"
+echo "  live session type: ${live_session_type:-unknown}"
+shot live-desktop "${MONITOR_LIVE}"
+
+echo "=== Phase 3/6: install onto an encrypted disk ==="
+# An empty "image" with a "targetImgref" is the offline shape: fisherman then
+# installs from containers-storage rather than pulling, which is the only way
+# the ISO's embedded payload gets used. Naming the image directly makes it
+# pull, and the image this ISO carries was never published to a registry.
+#
+# The user block is what phase 6 logs in as. Without it the installed system
+# has no account at all and the greeter has nobody to offer.
+#
+# Deliberately no scratch disk mounted at /var/lib/containers: Bluefin's ISO
+# pulls the payload from a registry and needs real space for it; Utah's ISO
+# carries the image in the squashfs, and mounting over that path hides it.
 cat > "${WORK}/recipe.json" <<EOF
 {
   "disk": "/dev/vda",
@@ -124,39 +214,73 @@ cat > "${WORK}/recipe.json" <<EOF
   "bootloader": "grub2",
   "hostname": "utah-luks-test",
   "encryption": {"type": "luks-passphrase", "passphrase": "${PASSPHRASE}"},
+  "user": {
+    "username": "${TEST_USER}",
+    "fullname": "Utah End To End",
+    "password": "${TEST_PASSWORD}",
+    "groups": ["wheel"]
+  },
   "flatpaks": []
 }
 EOF
 scp_live "${WORK}/recipe.json" liveuser@127.0.0.1:/tmp/luks-recipe.json
 
-# An empty "image" with a "targetImgref" is the offline shape: fisherman then
-# installs from containers-storage rather than pulling, which is the only way
-# the ISO's embedded payload gets used. Naming the image directly makes it
-# pull, and the image this ISO carries was never published to a registry.
-#
-# Deliberately no scratch disk mounted at /var/lib/containers. Bluefin's ISO
-# pulls the payload from a registry and needs real space for it; Utah's ISO
-# carries the image inside the squashfs as a VFS containers-storage graphroot
-# at exactly that path, so mounting anything over it hides the payload and the
-# install fails with the image "not known".
-
 echo "Running the installer from the ISO's embedded store..."
 ssh_live 'sudo /usr/local/bin/fisherman /tmp/luks-recipe.json'
-echo "Install reported success. Powering the live VM down..."
+
+# The installed system already boots with console=ttyS0, but also with
+# "rhgb quiet", which suppresses exactly the systemd messages phase 6 needs to
+# see. Drop those and forward the journal to the console, so "Reached target
+# Graphical Interface" actually reaches the serial log and the test can assert
+# on it rather than on pixel colour. Dakota patches the same entries for the
+# same reason; it only has to add the console because its entries lack one.
+echo "Making the installed system boot verbosely on the serial console..."
+ssh_live 'sudo bash -euc "
+    tmp=\$(mktemp -d)
+    trap \"umount \$tmp 2>/dev/null || true; rmdir \$tmp\" EXIT
+    seen=0
+    for part in /dev/vda2 /dev/vda1; do
+        mount \$part \$tmp 2>/dev/null || continue
+        for entry in \$tmp/loader/entries/*.conf \$tmp/EFI/*/loader/entries/*.conf; do
+            [ -f \"\$entry\" ] || continue
+            grep -q \"^options \" \"\$entry\" || continue
+            seen=\$((seen+1))
+            sed -i \"s/ rhgb//; s/ quiet//\" \"\$entry\"
+            grep -q \"console=ttyS0\" \"\$entry\" || \
+                sed -i \"s|^options .*|& console=tty0 console=ttyS0|\" \"\$entry\"
+            grep -q \"forward_to_console\" \"\$entry\" || \
+                sed -i \"s|^options .*|& systemd.journald.forward_to_console=yes|\" \"\$entry\"
+            echo \"  patched \$(basename \$entry)\"
+        done
+        umount \$tmp
+    done
+    echo \"boot entries seen: \$seen\"
+    [ \$seen -gt 0 ]
+"' || fail "found no boot entry to make verbose -- the install may not have written one"
+
+echo "Install complete. Powering the live VM down..."
 monitor "${MONITOR_LIVE}" "system_powerdown" || true
 sleep 8
 monitor "${MONITOR_LIVE}" "quit" || true
 sleep 2
 
-echo "=== Phase 3/4: boot the installed disk ==="
-cp -f "${OVMF_VARS_SRC}" "${WORK}/ovmf-vars-installed.fd"
+echo "=== Phase 4/6: boot the installed disk ==="
+# Carry the live VM's firmware variables over rather than starting from a
+# pristine copy. The installer writes an NVRAM boot entry pointing at
+# \EFI\fedora\shimx64.efi, and this ESP has no \EFI\BOOT\BOOTX64.EFI
+# fallback, so a reset NVRAM leaves nothing bootable: OVMF walks its default
+# list, finds no disk entry, and drops to the EFI Internal Shell. That looks
+# exactly like a Plymouth prompt to a screenshot -- a dark, static screen --
+# which is how an earlier version of this test reported a pass while typing
+# the passphrase at a firmware shell. Real hardware keeps its NVRAM; so do we.
+cp -f "${VARS}" "${WORK}/ovmf-vars-installed.fd"
 "${QEMU}" \
     -machine q35 -cpu host -m 8192 -smp 4 ${ACCEL} \
     -drive "if=pflash,format=raw,readonly=on,file=${OVMF_CODE}" \
     -drive "if=pflash,format=raw,file=${WORK}/ovmf-vars-installed.fd" \
     -drive "if=none,id=disk,file=${INSTALL_DISK},format=qcow2" \
     -device virtio-blk-pci,drive=disk \
-    -netdev "user,id=net0,hostfwd=tcp::$((SSH_PORT + 1))-:22" \
+    -netdev "user,id=net0,hostfwd=tcp::${SSH_PORT_INSTALLED}-:22" \
     -device virtio-net-pci,netdev=net0 \
     -monitor "unix:${MONITOR_INSTALLED},server,nowait" \
     -serial "file:${SERIAL_INSTALLED}" \
@@ -164,15 +288,138 @@ cp -f "${OVMF_VARS_SRC}" "${WORK}/ovmf-vars-installed.fd"
 qemu_pids+=("$(cat "${WORK}/installed.pid")")
 sleep 5
 
-echo "=== Phase 4/4: answer the passphrase prompt ==="
+echo "=== Phase 5/6: answer the passphrase prompt ==="
 status=0
 python3 "${ROOT}/iso/scripts/luks-unlock.py" qemu \
     "${MONITOR_INSTALLED}" "${PASSPHRASE}" "${SERIAL_INSTALLED}" || status=$?
-
-if [[ ${status} -eq 0 ]]; then
-    echo "PASS: Utah installed to an encrypted disk, unlocked, and booted."
-else
-    echo "FAIL: LUKS unlock or post-unlock boot failed (exit ${status})." >&2
+if [[ ${status} -ne 0 ]]; then
+    shot luks-failed "${MONITOR_INSTALLED}" || true
     tail -60 "${SERIAL_INSTALLED}" >&2 || true
+    fail "LUKS unlock or post-unlock boot failed (exit ${status})"
 fi
-exit "${status}"
+
+echo "=== Phase 6/6: log in and prove the desktop starts ==="
+echo "Waiting for the installed system to reach the graphical target..."
+for i in $(seq 1 90); do
+    if grep -qa "Reached target.*Graphical" "${SERIAL_INSTALLED}" 2>/dev/null; then
+        echo "  serial: reached the graphical target"; break
+    fi
+    if grep -qaE "Emergency mode|You are in emergency mode|Kernel panic" "${SERIAL_INSTALLED}" 2>/dev/null; then
+        shot installed-emergency "${MONITOR_INSTALLED}" || true
+        tail -40 "${SERIAL_INSTALLED}" >&2
+        fail "the installed system dropped to an emergency shell"
+    fi
+    [[ "$i" -eq 90 ]] && { tail -40 "${SERIAL_INSTALLED}" >&2; fail "no graphical target after 7m30s"; }
+    sleep 5
+done
+
+echo "Waiting for sshd on the installed system..."
+for i in $(seq 1 60); do
+    if ssh_target true 2>/dev/null; then break; fi
+    [[ "$i" -eq 60 ]] && fail "cannot log in as ${TEST_USER} over SSH"
+    sleep 5
+done
+echo "  ssh: logged in as ${TEST_USER}"
+
+ssh_target 'systemctl is-active gdm.service' 2>/dev/null | grep -qx active \
+    || fail "gdm is not running on the installed system"
+echo "  gdm.service: active"
+shot installed-greeter "${MONITOR_INSTALLED}"
+
+# Type the password at the greeter. GDM offers the single account already
+# selected, so Enter opens the password field and the password submits it.
+echo "Logging in at the greeter as ${TEST_USER}..."
+monitor "${MONITOR_INSTALLED}" "sendkey ret" || true
+sleep 3
+send_keys "${MONITOR_INSTALLED}" "${TEST_PASSWORD}"
+
+echo "Waiting for a GNOME session..."
+logged_in=0
+for i in $(seq 1 48); do
+    if ssh_target "pgrep -u ${TEST_USER} -x gnome-shell >/dev/null" 2>/dev/null; then
+        logged_in=1; break
+    fi
+    sleep 5
+done
+if (( ! logged_in )); then
+    shot installed-login-failed "${MONITOR_INSTALLED}" || true
+    echo "--- sessions ---" >&2
+    ssh_target 'loginctl list-sessions --no-legend' >&2 2>/dev/null || true
+    fail "no gnome-shell for ${TEST_USER} after logging in at the greeter"
+fi
+echo "  gnome-shell: running as ${TEST_USER}"
+
+# Ask for the user's *graphical* session by id rather than taking the first
+# session that mentions them: the SSH login this test is using is also a
+# session, it is also theirs, and it sorts first -- which reported "tty" for a
+# desktop the screenshot plainly shows.
+session_type="$(ssh_target "loginctl show-session \$(loginctl show-user ${TEST_USER} -p Display --value) -p Type --value" 2>/dev/null || true)"
+echo "  session type: ${session_type:-unknown}"
+sleep 10   # let the shell finish drawing before the screenshot
+shot installed-desktop "${MONITOR_INSTALLED}"
+
+echo
+echo "PASS: Utah installed to an encrypted disk, unlocked, and ${TEST_USER} logged"
+echo "      in to a GNOME session on it."
+echo "Screenshots: ${SHOTS}"
+
+# Publish the screenshots as the record of what passed. A run that only prints
+# "PASS" is a claim; the same run with the greeter and the desktop it produced
+# is evidence, and it is reviewable in a pull request without a QEMU host.
+DOCS="${UTAH_E2E_DOCS:-${ROOT}/docs/verification}"
+if [[ -n "${DOCS}" && "${DOCS}" != "none" ]]; then
+    mkdir -p "${DOCS}/screenshots"
+    cp -f "${SHOTS}"/*.png "${DOCS}/screenshots/" 2>/dev/null || true
+    captured="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    iso_size="$(du -h "${ISO}" | cut -f1)"
+    cat > "${DOCS}/README.md" <<EOF
+# Verification
+
+Written by \`just luks-test\` (iso/scripts/luks-e2e.sh). Do not edit by hand:
+the next passing run overwrites it.
+
+Every image below is a QEMU screendump taken during that run, at the moment
+the check beside it passed.
+
+| | |
+| --- | --- |
+| Captured | ${captured} |
+| Live ISO | \`$(basename "${ISO}")\`, ${iso_size} |
+| Installed image | \`${PAYLOAD_IMAGE}\` |
+| Root filesystem | btrfs on LUKS2, passphrase unlock |
+| Live session | GNOME, ${live_session_type:-unknown} |
+| Installed session | GNOME, ${session_type:-unknown}, user \`${TEST_USER}\` |
+
+## What passed
+
+1. The live ISO boots and its session reaches \`graphical.target\` with
+   \`gdm.service\` active and \`gnome-shell\` running — not a text console
+   that merely answers SSH.
+2. The installer creates a LUKS2 volume and installs from the ISO's embedded
+   container store, with no network.
+3. The installed disk boots on its own, with no ISO attached.
+4. Plymouth's passphrase prompt is answered and the root volume opens.
+5. The system reaches the graphical target rather than an emergency shell.
+6. The user logs in at the GDM greeter and gets a GNOME session.
+
+## Screenshots
+
+### Live session
+![Live session](screenshots/live-desktop.png)
+
+The desktop the ISO boots into, with the installer available.
+
+### GDM greeter on the installed system
+![Greeter](screenshots/installed-greeter.png)
+
+After the encrypted root has been unlocked and the system has reached the
+graphical target. This is what proves the boot did not stop at a console.
+
+### Logged in
+![Desktop](screenshots/installed-desktop.png)
+
+\`${TEST_USER}\`'s GNOME session, entered by typing the password at the
+greeter above.
+EOF
+    echo "Verification record: ${DOCS}/README.md"
+fi
