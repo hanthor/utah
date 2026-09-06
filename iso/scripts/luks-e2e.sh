@@ -153,7 +153,11 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 # copy per attempt too: each run overwrites the serial log, so every failure
 # used to destroy the evidence for the one before it.
 diagnose_boot() {
-    local log="$1" keep="${log%.log}-$(date +%Y%m%d-%H%M%S).log"
+    # Two statements, not one: bash expands every assignment word of a single
+    # `local` before it assigns any of them, so `${log%.log}` in the same
+    # `local` reads an unset log and trips set -u.
+    local log="$1"
+    local keep="${log%.log}-$(date +%Y%m%d-%H%M%S).log"
     cp -f "${log}" "${keep}" 2>/dev/null && echo "  serial log kept: ${keep}" >&2
     echo "--- units that failed ---" >&2
     sed 's/\x1b\[[0-9;:]*m//g' "${log}" 2>/dev/null \
@@ -298,8 +302,15 @@ ssh_live 'sudo bash -euc "
                 sed -i \"s|^options .*|& systemd.default_device_timeout_sec=180|\" \"\$entry\"
             echo \"  patched \$(basename \$entry)\"
         done
-        umount \$tmp
+        umount \$tmp || { echo \"could not unmount \$part\" >&2; exit 1; }
     done
+    # Push it all the way to the image file while a working guest is still
+    # here to do it. Everything after this point is a race against a guest
+    # that never powers down on its own, and an unflushed /boot is exactly
+    # the ext4 the installed system cannot probe.
+    sync
+    blockdev --flushbufs /dev/vda2 2>/dev/null || true
+    blockdev --flushbufs /dev/vda 2>/dev/null || true
     echo \"boot entries seen: \$seen\"
     [ \$seen -gt 0 ]
 "' || fail "found no boot entry to make verbose -- the install may not have written one"
@@ -312,7 +323,12 @@ echo "Install complete. Powering the live VM down..."
 # disk but not yet consistent:
 #   Timed out waiting for device /dev/disk/by-uuid/... - Dependency failed for
 #   boot.mount
-monitor "${MONITOR_LIVE}" "system_powerdown" || true
+# ACPI alone has never once stopped this guest: every run so far hit the
+# deadline below and was force-killed, the passing ones included. The live
+# session simply does not act on the power button, so ask the guest directly
+# and keep ACPI only as a fallback.
+ssh_live 'sudo systemctl poweroff --no-block' 2>/dev/null \
+    || monitor "${MONITOR_LIVE}" "system_powerdown" || true
 live_pid="$(cat "${WORK}/live.pid" 2>/dev/null || true)"
 # Ten minutes, not one. This guest genuinely takes minutes to stop: it unmounts
 # /boot at around t+425s, and forcing it at 60s cut the flush in half, leaving
