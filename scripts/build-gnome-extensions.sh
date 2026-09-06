@@ -48,7 +48,23 @@ meson install -C "${gsconnect_dir}/_build" --skip-subprojects
 glib-compile-schemas --strict /usr/share/gnome-shell/extensions/custom-command-list@storageb.github.com/schemas
 
 # Search Light
-glib-compile-schemas --strict /usr/share/gnome-shell/extensions/search-light@icedman.github.com/schemas
+sl_dir="/usr/share/gnome-shell/extensions/search-light@icedman.github.com"
+glib-compile-schemas --strict "${sl_dir}/schemas"
+
+# GNOME 48+ dropped Clutter.ShaderEffect.set_shader_source (the shader-snippet
+# API replaced it), so Search Light's tint effect crashes at enable() with
+# "this.set_shader_source is not a function" and the extension never loads.
+# Guard the call the way the actively-maintained blur-my-shell (which this
+# effect was copied from) does: skip it when absent. The search UI works; only
+# the background tint is inert on such shells. Fail loudly if the upstream line
+# moves, so a submodule bump cannot silently drop the fix.
+sl_tint="${sl_dir}/effects/tint_effect.js"
+if grep -q 'if (this._source) this.set_shader_source(this._source);' "${sl_tint}"; then
+    sed -i 's|if (this._source) this.set_shader_source(this._source);|if (this._source \&\& typeof this.set_shader_source === "function") this.set_shader_source(this._source);|' "${sl_tint}"
+else
+    echo "search-light tint_effect.js no longer matches the expected set_shader_source line; re-check the GNOME 51 guard" >&2
+    exit 1
+fi
 
 rm -rf /usr/share/gnome-shell/extensions/tmp
 
