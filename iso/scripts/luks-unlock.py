@@ -194,7 +194,7 @@ def qemu_check_serial(serial_log: str) -> str:
     """
     import re
     try:
-        raw = open(serial_log).read()
+        raw = open(serial_log, errors="replace").read()
     except OSError:
         return ""
     # Strip ANSI escape codes and collapse whitespace so that systemd status

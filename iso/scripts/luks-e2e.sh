@@ -370,7 +370,7 @@ shot installed-greeter "${MONITOR_INSTALLED}"
 # runs inside the session with a bus and a display of its own.
 echo "Arranging for a terminal to open in the session..."
 ssh_target "
-    grep -q fastfetch ~/.bashrc 2>/dev/null || echo fastfetch >> ~/.bashrc
+    grep -q 'utah-e2e fastfetch' ~/.bashrc 2>/dev/null || printf '%s\n' '[[ \$- == *i* ]] && fastfetch # utah-e2e fastfetch' >> ~/.bashrc
     mkdir -p ~/.config/autostart
     cat > ~/.config/autostart/${TERMINAL_APP}.desktop <<EOF
 [Desktop Entry]
@@ -403,6 +403,31 @@ if (( ! logged_in )); then
     fail "no gnome-shell for ${TEST_USER} after logging in at the greeter"
 fi
 echo "  gnome-shell: running as ${TEST_USER}"
+
+# A shell session that started is not the same as one whose extensions loaded.
+# Assert the enabled extensions raised no load-time error this boot -- the
+# GNOME-51 breaks this test exists to catch (GSConnect's clipboard final-type,
+# Search Light's dropped shader API) surface here as "Error"/"TypeError" lines
+# against the extension uuid. UTAH_E2E_EXTENSIONS lists the ones that must load
+# clean; empty to skip.
+EXT_CHECK="${UTAH_E2E_EXTENSIONS-gsconnect@andyholmes.github.io search-light@icedman.github.com}"
+if [[ -n "${EXT_CHECK}" ]]; then
+    for uuid in ${EXT_CHECK}; do
+        # State is the authoritative signal: an extension that threw at enable
+        # is ERROR/OUT_OF_DATE, one that loaded is ACTIVE. Grepping the journal
+        # for "Error" also catches an extension's own deliberate warnings (the
+        # GSConnect guard logs one when it degrades the clipboard portal), so
+        # trust the state and only surface journal lines as diagnostics.
+        state="$(ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"gnome-extensions info '${uuid}' 2>/dev/null\"" 2>/dev/null | grep -aE '^State:' | tail -1 | awk '{print \$2}' | tr -d '[:space:]' || true)"
+        if [[ "${state}" != "ACTIVE" && "${state}" != "ENABLED" ]]; then
+            echo "  extension ${uuid}: state=${state:-unknown}" >&2
+            ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"journalctl --user -b --no-pager 2>/dev/null | grep -F '${uuid}' | grep -iE 'Error|TypeError|Exception|not a function' | tail -5\"" >&2 2>/dev/null || true
+            shot installed-ext-error "${MONITOR_INSTALLED}" || true
+            fail "extension ${uuid} did not reach ACTIVE on GNOME 51 (state=${state:-unknown})"
+        fi
+        echo "  extension ${uuid}: ${state}"
+    done
+fi
 
 # Ask for the user's *graphical* session by id rather than taking the first
 # session that mentions them: the SSH login this test is using is also a
@@ -491,4 +516,45 @@ greeter above.
 
 EOF
     echo "Verification record: ${DOCS}/README.md"
+
+    # Surface the proof on the repo front page: keep the latest fastfetch shot,
+    # from inside the booted encrypted install, at the top of README.md. The
+    # block is delimited so each passing run refreshes it in place rather than
+    # stacking. Only a green run reaches here, so the badge on the front page
+    # always reflects a real end-to-end pass. UTAH_E2E_README=none to skip.
+    README="${UTAH_E2E_README:-${ROOT}/README.md}"
+    shot_rel="docs/verification/screenshots/installed-fastfetch.png"
+    if [[ "${README}" != "none" && -f "${README}" && -f "${DOCS}/screenshots/installed-fastfetch.png" ]]; then
+        python3 - "${README}" "${shot_rel}" "${captured}" <<'PYEMBED'
+import sys, re
+readme, shot, captured = sys.argv[1], sys.argv[2], sys.argv[3]
+begin, end = "<!-- BEGIN E2E VERIFICATION -->", "<!-- END E2E VERIFICATION -->"
+block = (
+    f"{begin}\n"
+    f"[![Verified end to end]({shot})](docs/verification/README.md)\n\n"
+    f"*Verified end to end on {captured}: installed to a LUKS2-encrypted disk, "
+    f"unlocked at the Plymouth prompt, and logged in to a GNOME session — "
+    f"the shot above is fastfetch inside that booted install. "
+    f"Full record and more screenshots in "
+    f"[docs/verification](docs/verification/README.md), refreshed by "
+    f"`just luks-test`.*\n"
+    f"{end}"
+)
+text = open(readme, encoding="utf-8").read()
+if begin in text and end in text:
+    text = re.sub(re.escape(begin) + r".*?" + re.escape(end), block, text, count=1, flags=re.S)
+else:
+    # Insert right after the first heading line, so the title stays on top.
+    lines = text.splitlines(keepends=True)
+    insert_at = 0
+    for i, line in enumerate(lines):
+        if line.startswith("# "):
+            insert_at = i + 1
+            break
+    lines.insert(insert_at, "\n" + block + "\n")
+    text = "".join(lines)
+open(readme, "w", encoding="utf-8").write(text)
+print(f"updated {readme} with the latest verification screenshot")
+PYEMBED
+    fi
 fi
