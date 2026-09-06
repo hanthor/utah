@@ -146,6 +146,15 @@ trap cleanup EXIT
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
+# `just try-installed` boots an overlay backed by the very disk this test is
+# about to recreate, out of the same work directory. Leaving it running while
+# phase 3 rewrites install.qcow2 corrupts what phase 4 then boots, and the
+# result looks like an image bug: the installed system comes up without its
+# /boot and drops to an emergency shell. Refuse to start instead.
+if [[ -f "${WORK}/try.pid" ]] && kill -0 "$(cat "${WORK}/try.pid" 2>/dev/null)" 2>/dev/null; then
+    fail "a VM from 'just try-installed' is running on this work directory (pid $(cat "${WORK}/try.pid")); stop it first: kill \$(cat ${WORK}/try.pid)"
+fi
+
 echo "=== Phase 1/6: boot the live ISO ==="
 rm -f "${INSTALL_DISK}" "${MONITOR_LIVE}" "${MONITOR_INSTALLED}" \
       "${SERIAL_LIVE}" "${SERIAL_INSTALLED}"
