@@ -35,7 +35,21 @@ disable_unit() {
 
 # Services shared with Bluefin LTS. Optional units are guarded because
 # Hummingbird intentionally does not ship every Bluefin integration package.
-enable_unit rechunker-group-fix.service
+# Not enabled: rechunker-group-fix.service. It exists to repair the
+# /usr/lib/{group,gshadow} damage left by the legacy rechunker
+# (hhd-dev/rechunk) when rebasing to an image built without it. Utah rechunks
+# with chunkah, through projectbluefin/actions' reusable-build, and has never
+# been through legacy-rechunk -- so there is nothing here for it to repair.
+#
+# It is not merely useless, it breaks the boot. The unit orders itself both
+# After=local-fs.target and Before=systemd-sysusers.service, and local-fs
+# already comes after sysusers via systemd-tmpfiles-setup-dev.service and
+# local-fs-pre.target. systemd resolves the cycle by deleting a job from it --
+# systemd-tmpfiles-setup-dev.service, which creates the static device nodes --
+# and the installed system then times out every .device unit at once,
+# /dev/ttyS0 as readily as the /boot filesystem, and lands in an emergency
+# shell. Disable rather than leave it to the vendor preset.
+disable_unit rechunker-group-fix.service
 enable_unit brew-setup.service
 enable_unit flatpak-nuke-fedora.service
 enable_unit flatpak-preinstall.service
