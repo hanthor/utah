@@ -270,10 +270,30 @@ ssh_live 'sudo bash -euc "
 "' || fail "found no boot entry to make verbose -- the install may not have written one"
 
 echo "Install complete. Powering the live VM down..."
+# Wait for it to actually exit, rather than assuming a few seconds is enough.
+# The next phase boots the disk this VM has just written; starting while the
+# guest is still flushing gives the installed system a /boot whose ext4 the
+# kernel cannot probe, and the boot dies waiting for a device that is on the
+# disk but not yet consistent:
+#   Timed out waiting for device /dev/disk/by-uuid/... - Dependency failed for
+#   boot.mount
 monitor "${MONITOR_LIVE}" "system_powerdown" || true
-sleep 8
-monitor "${MONITOR_LIVE}" "quit" || true
-sleep 2
+live_pid="$(cat "${WORK}/live.pid" 2>/dev/null || true)"
+for i in $(seq 1 60); do
+    kill -0 "${live_pid}" 2>/dev/null || break
+    [[ "$i" -eq 60 ]] && {
+        echo "  live VM did not shut down in 60s; forcing it"
+        monitor "${MONITOR_LIVE}" "quit" || true
+    }
+    sleep 1
+done
+for i in $(seq 1 15); do
+    kill -0 "${live_pid}" 2>/dev/null || break
+    sleep 1
+done
+kill -0 "${live_pid}" 2>/dev/null && fail "the live VM would not exit; refusing to boot a disk it may still be writing"
+echo "  live VM exited cleanly"
+sync
 
 echo "=== Phase 4/6: boot the installed disk ==="
 # Carry the live VM's firmware variables over rather than starting from a
@@ -388,7 +408,7 @@ echo "  gnome-shell: running as ${TEST_USER}"
 # session that mentions them: the SSH login this test is using is also a
 # session, it is also theirs, and it sorts first -- which reported "tty" for a
 # desktop the screenshot plainly shows.
-session_type="$(ssh_target "loginctl show-session \$(loginctl show-user ${TEST_USER} -p Display --value) -p Type --value" 2>/dev/null || true)"
+session_type="$(ssh_target "bash --norc --noprofile -c 'loginctl show-session \$(loginctl show-user ${TEST_USER} -p Display --value) -p Type --value'" 2>/dev/null | tail -1 || true)"
 echo "  session type: ${session_type:-unknown}"
 sleep 10   # let the shell finish drawing before the screenshot
 shot installed-desktop "${MONITOR_INSTALLED}"
@@ -446,6 +466,12 @@ the check beside it passed.
 
 ## Screenshots
 
+### The installed system, running
+![fastfetch](screenshots/installed-fastfetch.png)
+
+A terminal on the desktop this test built, reporting the OS, kernel and
+desktop from inside it. Everything below is how it got there.
+
 ### Live session
 ![Live session](screenshots/live-desktop.png)
 
@@ -463,11 +489,6 @@ graphical target. This is what proves the boot did not stop at a console.
 \`${TEST_USER}\`'s GNOME session, entered by typing the password at the
 greeter above.
 
-### A terminal on the installed system
-![fastfetch](screenshots/installed-fastfetch.png)
-
-Ghostty running fastfetch, which reports the OS, kernel and desktop from
-inside the system this test just built.
 EOF
     echo "Verification record: ${DOCS}/README.md"
 fi
