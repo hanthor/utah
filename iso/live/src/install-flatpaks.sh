@@ -20,7 +20,10 @@ dbus-daemon --system --fork --nopidfile
 sleep 1
 
 if [[ -d "${FLATPAK_CACHE}/repo/refs" ]]; then
-    rsync -a --ignore-existing "${FLATPAK_CACHE}/repo/" /var/lib/flatpak/repo/ || true
+    # cp, not rsync: rsync is in neither Hummingbird nor the factory, so it
+    # cannot be installed into the live layer. -n keeps the seed
+    # non-destructive, which is all --ignore-existing was doing.
+    cp -a -n "${FLATPAK_CACHE}/repo/." /var/lib/flatpak/repo/ || true
 fi
 
 flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
@@ -53,9 +56,23 @@ for branch in /var/lib/flatpak/app/${INSTALLER_APP_ID}/x86_64/*; do
 done
 flatpak override --system --filesystem=/etc:ro "${INSTALLER_APP_ID}"
 
-mapfile -t apps < <(awk -F '"' '/^flatpak / {print $2}' /tmp/flatpaks-list)
+# /tmp/flatpaks-list already holds bare application ids: the Containerfile
+# converts the Brewfile before copying it in, so the contract stays the single
+# source of truth. Parsing it as Brewfile syntax a second time matched nothing
+# and left the array empty, and an empty array makes flatpak read the remote
+# name as the thing to install:
+#   error: No remote refs found for 'flathub'
+mapfile -t apps < <(grep -v '^[[:space:]]*#' /tmp/flatpaks-list | grep -v '^[[:space:]]*$')
+if (( ${#apps[@]} == 0 )); then
+    echo "No flatpaks listed in /tmp/flatpaks-list; the Brewfile conversion is broken" >&2
+    exit 1
+fi
 flatpak install --system --noninteractive --no-related --or-update flathub "${apps[@]}"
 flatpak uninstall --system --noninteractive --unused || true
 
 mkdir -p "${FLATPAK_CACHE}"
-rsync -a --delete /var/lib/flatpak/repo/ "${FLATPAK_CACHE}/repo/"
+# Replacing the directory outright is what --delete was for: a stale object
+# left in the cache would be seeded into the next build and never collected.
+rm -rf "${FLATPAK_CACHE}/repo"
+mkdir -p "${FLATPAK_CACHE}/repo"
+cp -a /var/lib/flatpak/repo/. "${FLATPAK_CACHE}/repo/"
