@@ -80,7 +80,15 @@ packages = [
 # never there. flatpak is not in their repository at all -- the factory builds
 # it now -- and without it the image declares a Flatpak contract it has no way
 # to install, and the live ISO build stops at "flatpak: command not found".
+#
+# cryptsetup is the same shape again: Hummingbird ships cryptsetup-libs but not
+# the tool, so the installer could not create an encrypted volume --
+#   fisherman: fatal: missing required host tool: "cryptsetup" not found
+# -- and an installed system whose disk is encrypted could not manage its own
+# keys. The initramfs already carries the crypt and systemd-cryptsetup dracut
+# modules, so unlocking was never the gap; creating the volume was.
 packages = [
+    "cryptsetup",
     "flatpak",
     "fwupd",
     "systemd-resolved",
