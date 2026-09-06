@@ -91,7 +91,7 @@ if (( ${#apps[@]} == 0 )); then
 fi
 flatpak install --system --noninteractive --no-related --or-update flathub "${apps[@]}"
 
-# BlueShell, TunaOS's terminal, from the TunaOS OCI remote.
+# Ghostty, from the TunaOS OCI remote.
 #
 # Utah ships no terminal emulator at all otherwise. Bluefin's own image test
 # asserts ptyxis, but ptyxis is not in Bluefin's package contract because
@@ -105,7 +105,7 @@ flatpak install --system --noninteractive --no-related --or-update flathub "${ap
 flatpak remote-add --system --if-not-exists tuna-os \
     https://tunaos.org/flatpak/tuna-os.flatpakrepo
 flatpak install --system --noninteractive --no-related --or-update \
-    tuna-os org.tunaos.BlueShell
+    tuna-os com.mitchellh.ghostty
 flatpak uninstall --system --noninteractive --unused || true
 
 mkdir -p "${FLATPAK_CACHE}"

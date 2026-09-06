@@ -33,7 +33,7 @@ TEST_PASSWORD="${UTAH_E2E_PASSWORD:-utahtest}"
 # The terminal the last screenshot opens. --system matters: flatpak otherwise
 # consults a user installation that does not exist and aborts instead of
 # falling back.
-TERMINAL_APP="${UTAH_E2E_TERMINAL:-org.tunaos.BlueShell}"
+TERMINAL_APP="${UTAH_E2E_TERMINAL:-com.mitchellh.ghostty}"
 
 ISO="$(realpath "${ISO}")"
 mkdir -p "${WORK}"
@@ -466,7 +466,7 @@ greeter above.
 ### A terminal on the installed system
 ![fastfetch](screenshots/installed-fastfetch.png)
 
-BlueShell running fastfetch, which reports the OS, kernel and desktop from
+Ghostty running fastfetch, which reports the OS, kernel and desktop from
 inside the system this test just built.
 EOF
     echo "Verification record: ${DOCS}/README.md"
