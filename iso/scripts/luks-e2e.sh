@@ -270,6 +270,14 @@ ssh_live 'sudo bash -euc "
                 sed -i \"s|^options .*|& console=tty0 console=ttyS0|\" \"\$entry\"
             grep -q \"forward_to_console\" \"\$entry\" || \
                 sed -i \"s|^options .*|& systemd.journald.forward_to_console=yes|\" \"\$entry\"
+            # Unlocking this LUKS2 volume costs ~30s of argon2 before userspace
+            # starts, and on a loaded host udev can still be settling when
+            # systemd gives up on /boot at its 45s default -- the installed
+            # system then drops to an emergency shell over a disk that is
+            # provably intact and boots fine when the host is quieter. Give the
+            # device jobs room rather than let host load decide the verdict.
+            grep -q \"default_device_timeout_sec\" \"\$entry\" || \
+                sed -i \"s|^options .*|& systemd.default_device_timeout_sec=180|\" \"\$entry\"
             echo \"  patched \$(basename \$entry)\"
         done
         umount \$tmp
