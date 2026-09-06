@@ -224,6 +224,11 @@ build-local stream="testing" package_image="localhost/utah-packages:local-merged
 luks-test iso_path="output/utah-live.iso" image="ghcr.io/projectbluefin/utah:testing":
     bash iso/scripts/luks-e2e.sh "{{ iso_path }}" "{{ image }}"
 
+# Boot the disk luks-test installed, with VNC and a browser console, so the
+# verified result can be driven by hand instead of only asserted about.
+try-installed:
+    bash iso/scripts/boot-installed.sh
+
 generate-build-tags base_name stream flavor kernel_pin build_number version event_name event_number:
     @echo "{{ stream }} {{ version }}"
 

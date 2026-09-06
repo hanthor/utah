@@ -8,12 +8,12 @@ the check beside it passed.
 
 | | |
 | --- | --- |
-| Captured | 2026-09-06T04:11:06Z |
+| Captured | 2026-09-06T05:23:12Z |
 | Live ISO | `utah-live.iso`, 7.7G |
 | Installed image | `ghcr.io/projectbluefin/utah:testing` |
 | Root filesystem | btrfs on LUKS2, passphrase unlock |
 | Live session | GNOME, wayland |
-| Installed session | GNOME, tty, user `utahtest` |
+| Installed session | GNOME, wayland, user `utahtest` |
 
 ## What passed
 
@@ -45,3 +45,9 @@ graphical target. This is what proves the boot did not stop at a console.
 
 `utahtest`'s GNOME session, entered by typing the password at the
 greeter above.
+
+### A terminal on the installed system
+![fastfetch](screenshots/installed-fastfetch.png)
+
+BlueShell running fastfetch, which reports the OS, kernel and desktop from
+inside the system this test just built.

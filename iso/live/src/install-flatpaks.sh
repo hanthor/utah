@@ -16,7 +16,29 @@ INSTALLER_VERSION="${UTAH_INSTALLER_VERSION:-v3.0.16}"
 
 mkdir -p "${FLATPAK_CACHE}/tmp" /run/dbus
 export TMPDIR="${FLATPAK_CACHE}/tmp"
+# /root is a symlink to /var/roothome in a bootc image and the target does not
+# exist during a container build, so mkdir -p /root/... fails outright. Point
+# the cache somewhere writable instead; this only silences dconf's warnings.
+export XDG_CACHE_HOME="${FLATPAK_CACHE}/cache"
+mkdir -p "${XDG_CACHE_HOME}"
+# An OCI flatpak remote makes flatpak spawn a session bus of its own, and a bus
+# refuses to start without a machine id -- which a container image does not
+# have. Flathub installs never needed one; the TunaOS remote does:
+#   Cannot spawn a message bus without a machine-id
+# The id is build-time only; systemd regenerates a real one on first boot.
+if [[ ! -s /etc/machine-id ]]; then
+    systemd-machine-id-setup >/dev/null 2>&1 || dbus-uuidgen > /etc/machine-id
+fi
 dbus-daemon --system --fork --nopidfile
+# ...and a session bus. Installing from an OCI remote reaches for one and,
+# finding none, tries to autolaunch it:
+#   error: Cannot autolaunch D-Bus without X11 $DISPLAY
+# Flathub's ostree remotes never ask for it, which is why this only appeared
+# when the TunaOS remote was added.
+if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+    DBUS_SESSION_BUS_ADDRESS="$(dbus-daemon --session --fork --print-address)"
+    export DBUS_SESSION_BUS_ADDRESS
+fi
 sleep 1
 
 if [[ -d "${FLATPAK_CACHE}/repo/refs" ]]; then
@@ -68,6 +90,22 @@ if (( ${#apps[@]} == 0 )); then
     exit 1
 fi
 flatpak install --system --noninteractive --no-related --or-update flathub "${apps[@]}"
+
+# BlueShell, TunaOS's terminal, from the TunaOS OCI remote.
+#
+# Utah ships no terminal emulator at all otherwise. Bluefin's own image test
+# asserts ptyxis, but ptyxis is not in Bluefin's package contract because
+# Fedora's base image carries it -- and Hummingbird's does not, nor does it
+# package ptyxis, vte291 or gnome-console, so there is nothing to install.
+# Until this factory builds a terminal, the flatpak is the terminal.
+#
+# Kept out of the Brewfile-derived list on purpose: that list is the parity
+# contract with Bluefin and verify-desktop-contract compares it byte for byte.
+# This is Utah's own addition and does not belong in it.
+flatpak remote-add --system --if-not-exists tuna-os \
+    https://tunaos.org/flatpak/tuna-os.flatpakrepo
+flatpak install --system --noninteractive --no-related --or-update \
+    tuna-os org.tunaos.BlueShell
 flatpak uninstall --system --noninteractive --unused || true
 
 mkdir -p "${FLATPAK_CACHE}"
