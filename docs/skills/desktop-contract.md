@@ -102,6 +102,20 @@ known case (#443): it exited 255 every start, so mDNS never worked.
 daemon still runs confined as `avahi_t`. Spot others on a booted VM with
 `journalctl -b | grep nnp_transition` and `ps -eZ` (a daemon showing
 `init_t` is the symptom).
+## First-boot work must not gate graphical.target
+
+`systemd-analyze critical-chain graphical.target` on a fresh VM is the check.
+A target orders itself `After=` every unit it `Wants` unless that unit sets
+`DefaultDependencies=no`, so a `Type=oneshot` wanted by `multi-user.target`
+holds both targets until it exits. `bootc-unified-storage.service` did that for
+the full registry pull of the booted image (82 s of a 1 min 32 s boot on a
+datacenter link), despite a comment claiming it needed no network. It now sets
+`DefaultDependencies=no` with the equivalent explicit ordering plus
+`network-online.target`, runs at idle priority and retries every 15 minutes.
+Do not wrap `bootc` in `sh -c` to sequence it: the bare binary's
+`install_exec_t` label is its SELinux entrypoint, and wrapped it ran as
+`initrc_t` with its `chcon` calls denied `mac_admin`. Pinned by
+`tests/test_unified_storage_unit.py`.
 
 ## Tolerating a non-zero exit in a unit file
 
