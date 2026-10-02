@@ -149,10 +149,32 @@ Building GSConnect runs meson install. Because `desktop-file-utils` is not
 published by Hummingbird or Utah's repository, `scripts/build-gnome-extensions.sh`
 disables GSConnect's `update_desktop_database` meson post-install hook to avoid
 failing on the missing utility. MIME and schema databases are handled by the
-system and glib-compile-schemas. Additionally, `scripts/build-gnome-extensions.sh`
-guards `src/shell/clipboard.js` against GNOME 48+ final GTypes: wrapping
-`GSConnectShellClipboard` registration in a try/catch prevents module load failures
-on `GjsPrivate.DBusImplementation`, gracefully degrading to an inert portal on GNOME 51.
+system and glib-compile-schemas.
+
+Declaring GNOME 51 in `metadata.json` is necessary, not sufficient: both
+failures below passed the metadata check, built cleanly, and only showed up
+in a booted session's journal (`journalctl _UID=1000 | grep -i extension`).
+
+- **GSConnect** tracks upstream `GSConnect/gnome-shell-extension-gsconnect`
+  at `v73`. Earlier GSConnect subclassed `GjsPrivate.DBusImplementation`, a
+  final GType since GNOME 48, in `shell/clipboard.js`, `wl_clipboard.js` and
+  `service/utils/dbus.js`. Utah once text-patched only the first, so the
+  daemon still threw "Cannot inherit from a final type" on every login and
+  GSConnect never started. v73 stopped subclassing it (upstream 11be9b7f); the
+  build now greps the whole `src/` tree and fails if a subclass returns. The
+  `projectbluefin` fork it used to track only added the GNOME 51 declaration,
+  which upstream carries itself.
+- **Dash to Dock** is pinned to the v109 release commit on `master` (upstream
+  publishes no `extensions.gnome.org-v1xx` branch past v106). v106 imports
+  `resource:///org/gnome/shell/ui/pointerWatcher.js`, which GNOME 51 removed,
+  so the dock silently never loaded; upstream 38545156 moved it to
+  `Meta.CursorTracker`.
+
+`tests/test_gnome_extensions.py` reads the pinned sources for both, so a pin
+moved back to an affected revision fails `just check`. To validate an
+extension bump without an image build, copy the built tree over the installed
+one on a booted VM under `bootc usr-overlay`, restart `gdm`, and read the
+session journal and `gnome-extensions info <uuid>` (`State: ACTIVE`).
 
 ## The GDM greeter logo is Bluefin, not Fedora (#378)
 
