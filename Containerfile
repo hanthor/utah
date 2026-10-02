@@ -174,7 +174,18 @@ RUN --mount=type=bind,from=v4l2loopback,source=/out,target=/tmp/utah-v4l2loopbac
 # The package lists live in the manifests, not here.  When they were spelled
 # out in this RUN as well, the two copies drifted and the contract check was
 # asserting a different set than the install had asked for.
+# Hummingbird's repository is not pinned: it is a rolling distribution and
+# Utah takes its packages as they publish. But nothing in this layer's cache
+# key moved when they did -- the manifests, the repo files and the factory
+# stamp all stay put -- so the registry layer cache served the same
+# transaction night after night, and new Hummingbird RPMs reached testing only
+# when a base-image bump happened to bust it. `just build-ghcr` passes the UTC
+# day of the repository's repomd <revision> (a publish timestamp), so the
+# transaction picks up new Hummingbird packages once a day and same-day builds
+# still share the cached layer. Local builds leave it unset.
+ARG HUMMINGBIRD_REPO_DAY=unset
 RUN --mount=type=bind,from=packages,source=/repository,target=/etc/utah-packages,ro \
+    echo "Hummingbird repository day: ${HUMMINGBIRD_REPO_DAY}" && \
     /usr/local/libexec/utah-install-packages \
       /usr/share/utah/bluefin.toml /usr/share/utah/utah.toml && \
     IMAGE_FLAVOR=main /usr/local/libexec/utah-verify-rpm-contract \

@@ -130,6 +130,18 @@ write it. The cache is off, silently, whenever the package is not readable
 from where the build runs, which is the case until a testing-branch build has
 pushed once.
 
+The transaction's cache key is its COPY'd inputs: the manifests, the repo
+files (the `# factory-pin:` stamp among them, #371) and the install script.
+Hummingbird's own repository is unpinned and rolling, so none of those move
+when it publishes, and the cache used to replay the same transaction until a
+base-image bump busted it. `build-ghcr` therefore resolves the repository's
+`repomd.xml` `<revision>` -- a publish timestamp -- and passes its UTC day as
+`ARG HUMMINGBIRD_REPO_DAY`, declared directly above the transaction. The day,
+not the raw revision: Hummingbird republishes several times a day, and keying
+on every publish would rebuild the most expensive layer on nearly every run.
+Unresolvable metadata warns and builds with `unresolved`; local builds keep
+the `unset` default.
+
 ## Adding a script
 
 All of Utah's scripts arrive in one COPY, staged under `/tmp/utah-scripts/`

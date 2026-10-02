@@ -415,9 +415,36 @@ build-ghcr base_name stream flavor kernel_pin="":
     else
       echo "Registry layer cache: off (${layer_cache_ref} is not readable from here)"
     fi
+    # Key the package transaction on Hummingbird's repository revision so the
+    # layer cache above cannot pin a rolling repository to an old snapshot
+    # (HUMMINGBIRD_REPO_DAY in the Containerfile). An unreachable repo
+    # would fail the transaction anyway; warn here and let it.
+    # Bash builtins only: the recipe also runs in a sandboxed PATH
+    # (tests/test_kernel_cache_signing.py), where sed and curl may be absent.
+    hb_baseurl=""
+    while IFS= read -r line; do
+      case "$line" in baseurl=*) hb_baseurl="${line#baseurl=}"; break ;; esac
+    done < packages/hummingbird.repo
+    hb_revision=""
+    if command -v curl >/dev/null 2>&1 \
+        && repomd="$(curl -fsSL --retry 3 "${hb_baseurl%/}/repodata/repomd.xml")" \
+        && [[ "$repomd" =~ \<revision\>([^<]+)\</revision\> ]]; then
+      hb_revision="${BASH_REMATCH[1]}"
+    fi
+    if [ -z "$hb_revision" ]; then
+      echo "::warning title=Hummingbird revision unresolved::${hb_baseurl} gave no repomd revision; the package layer may come from cache"
+      hb_revision=unresolved
+    elif [[ "$hb_revision" =~ ^[0-9]{9,}$ ]]; then
+      # The revision is a publish timestamp and moves several times a day.
+      # Keyed on its UTC day, the transaction refreshes once a day and the
+      # builds in between still share the cached layer.
+      hb_revision="$(date -u -d "@${hb_revision}" +%Y-%m-%d)"
+    fi
+    echo "Hummingbird repository day: ${hb_revision}"
     podman build \
       "${base_args[@]}" \
       "${layer_cache_args[@]}" \
+      --build-arg HUMMINGBIRD_REPO_DAY="$hb_revision" \
       --build-arg IMAGE_NAME="$image_name" \
       --build-arg IMAGE_ID="{{ image }}" \
       --build-arg IMAGE_FLAVOR={{ flavor }} \
