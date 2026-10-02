@@ -104,6 +104,17 @@ curl --fail --retry 3 --silent --show-error \
 echo "${FLATHUB_REPO_SHA256}  /tmp/flathub.flatpakrepo" | sha256sum --check --strict
 install -m0644 /tmp/flathub.flatpakrepo /etc/flatpak/remotes.d/flathub.flatpakrepo
 rm -f /tmp/flathub.flatpakrepo
+# The pinned descriptor carries no collection ID, but common's preinstall.d
+# entries pin CollectionID=org.flathub.Stable, and flatpak preinstall skips a
+# remote whose collection ID differs -- silently: "Nothing to do." and no
+# Bazaar. A remotes.d remote is applied to the repo once, at creation, so the
+# ID has to be in the descriptor before first boot. It is added after the
+# hash check above, which therefore still covers Flathub's bytes exactly.
+# Bluefin's remote-add'ed remote picks the ID up from Flathub's summary.
+grep -q '^DeployCollectionID=' /etc/flatpak/remotes.d/flathub.flatpakrepo ||
+    sed -i '/^\[Flatpak Repo\]$/a DeployCollectionID=org.flathub.Stable' \
+        /etc/flatpak/remotes.d/flathub.flatpakrepo
+grep -qx 'DeployCollectionID=org.flathub.Stable' /etc/flatpak/remotes.d/flathub.flatpakrepo
 
 disable_unit flatpak-add-fedora-repos.service
 

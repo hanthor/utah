@@ -77,6 +77,25 @@ The TOML's sections are the contract's table of contents:
   symlinks that bypass uupd staging or undo manual rollbacks. Switchers can
   also manually verify or mask them if a local `/etc` symlink was preserved.
 
+  A unit being enabled in the built image is not the same as it being enabled
+  on a booted one. bootc applies presets on first boot, and Hummingbird's
+  `99-default-disable.preset` turns off every unit no preset names, so a build
+  -time `systemctl enable` without a line in `85-utah-desktop.preset` (or a
+  vendor preset such as brew's `01-homebrew.preset`) is undone. That is how
+  `flatpak-preinstall.service` shipped "enabled" and booted disabled, leaving
+  non-ISO installs without Bazaar. `DesktopUnitEnablementTests` holds the
+  script and the preset in agreement. Check a booted VM with `systemctl
+  is-enabled <unit>` when in doubt.
+
+  The Flathub remote is a `/etc/flatpak/remotes.d` descriptor, applied to the
+  repo once, when `/var/lib/flatpak/repo` is created. Flathub's descriptor has
+  no collection ID, while common's preinstall entries pin
+  `CollectionID=org.flathub.Stable`, and `flatpak preinstall` silently skips a
+  remote whose ID differs ("Nothing to do."). `configure-services.sh` adds
+  `DeployCollectionID=org.flathub.Stable` to the descriptor at build time.
+  Editing the descriptor on a booted system changes nothing once the repo
+  exists (`xa.applied-remotes`); use `flatpak remote-modify --collection-id`.
+
 The common image pinned in `Containerfile` (`COMMON_IMAGE_SHA`) includes
 `projectbluefin/common#1284`, which removed Warehouse and smile from Bluefin's
 default Brewfile. Utah follows that upstream default set; the ordered app

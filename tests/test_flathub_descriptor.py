@@ -62,7 +62,15 @@ curl() {
     def test_pinned_descriptor_is_installed_and_temporary_download_removed(self):
         result = self.run_script()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.destination.read_bytes(), DESCRIPTOR.read_bytes())
+        # The installed descriptor is the pinned one plus exactly one line:
+        # the collection ID flatpak preinstall needs to match common's
+        # CollectionID=org.flathub.Stable entries. Url= and GPGKey=, the trust
+        # root, stay byte-for-byte what the hash covered.
+        installed = self.destination.read_text().splitlines()
+        pinned = DESCRIPTOR.read_text().splitlines()
+        self.assertEqual(installed[0], "[Flatpak Repo]")
+        self.assertEqual(installed[1], "DeployCollectionID=org.flathub.Stable")
+        self.assertEqual([installed[0]] + installed[2:], pinned)
         self.assertEqual(self.destination.stat().st_mode & 0o777, 0o644)
         self.assertFalse((self.root / "tmp/flathub.flatpakrepo").exists())
 
