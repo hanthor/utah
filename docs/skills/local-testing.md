@@ -141,6 +141,18 @@ QEMU-for-Docker and exposes the noVNC console at the printed URL (comment
 above `boot-iso` in `Justfile`), with TPM, UEFI, and `-snapshot` so nothing
 persists.
 
+### Units that must stand down on live media
+
+The live root is a dmsquash-live overlay: no `/sysroot`, no
+`/run/ostree-booted`. Units written for installed bootc systems must check one
+of those, not the filesystem type of `/sysroot`. bootupd's
+`bootloader-update.service` checked only for an erofs/squashfs `/sysroot`
+and failed in every live session; `bootloader-update.service.d/
+10-utah-ostree-only.conf` adds `ConditionPathExists=/run/ostree-booted`.
+`configure-live.sh` masks the units that must not run there at all
+(`bootc-unified-storage.service`). On a booted live ISO, `systemctl --failed`
+should be empty.
+
 ### Supported and unsupported boot paths
 
 - **UEFI x86_64 (Supported)**: The live ISO is built strictly for UEFI boot
