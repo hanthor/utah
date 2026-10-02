@@ -7,6 +7,8 @@
 files = [
   "/usr/share/ublue-os/bluefin-logos/bluefin.png",
   "/usr/share/pixmaps/bluefin-gdm-logo.png",
+  # The os-release LOGO icon; common ships Bluefin's raptor under this name.
+  "/usr/share/pixmaps/fedora-logo-icon.png",
   "/usr/share/ublue-os/bluefin-logos/chicken.png",
   "/usr/share/ublue-os/bluefin-logos/symbols/bluefin",
   "/usr/share/backgrounds/bluefin/01-bluefin.xml",
@@ -29,6 +31,7 @@ BUG_REPORT_URL = "https://github.com/projectbluefin/utah/issues/"
 DEFAULT_HOSTNAME = "utah"
 VERSION_CODENAME = "Utahraptor"
 IMAGE_ID = "utah"
+LOGO = "fedora-logo-icon"
 
 [branding.os_release_patterns]
 PRETTY_NAME = '^Utah \(Version: .+\)$'

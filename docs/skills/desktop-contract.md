@@ -154,6 +154,17 @@ guards `src/shell/clipboard.js` against GNOME 48+ final GTypes: wrapping
 `GSConnectShellClipboard` registration in a try/catch prevents module load failures
 on `GjsPrivate.DBusImplementation`, gracefully degrading to an inert portal on GNOME 51.
 
+## The OS logo is an os-release key
+
+GNOME Initial Setup's welcome page, Settings > About and fastfetch show the
+icon named by os-release `LOGO`. Fedora sets `LOGO=fedora-logo-icon` and
+Bluefin keeps it; common overlays the raptor at
+`/usr/share/pixmaps/fedora-logo-icon.png`. Hummingbird's os-release has no
+`LOGO`, so Utah showed the generic GNOME foot with the raptor already on disk.
+`configure-branding.sh` sets it, and the contract asserts both the key and the
+icon file. To check without a build: `bootc usr-overlay`, append the key to
+`/usr/lib/os-release`, `systemctl restart gdm`, and look at Initial Setup.
+
 ## The GDM greeter logo is Bluefin, not Fedora (#378)
 
 Without an `org.gnome.login-screen.logo` override, GDM shows the schema
