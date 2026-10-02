@@ -341,14 +341,18 @@ the pin is stale, write nothing), and the default (rewrite), plus `--digest` to
 take a digest resolved by another job. The suite is offline by default; the one
 test that talks to the registry runs only with `UTAH_NETWORK_TESTS=1`.
 
-The schedule is `.github/workflows/bump-factory-pin.yml`: Mondays 07:00 UTC and
-on demand, a read-only resolve job followed by a one-line pull request against
-`testing` opened with `peter-evans/create-pull-request` -- the same mechanism
-the ISO documentation PR already uses, under the same never-merge rule. Both
-jobs check out `testing` once and run the script from that checkout, so a
-`workflow_dispatch` fired before `scripts/bump-factory-pin.py` has reached
-`testing` fails on the missing file: wait for the sync, or dispatch from a ref
-that already carries the script.
+The schedule is `.github/workflows/bump-factory-pin.yml`: daily at 07:00 UTC
+(after the factory's 03:17 rebuild publishes) and on demand, a read-only
+resolve job followed by a one-line pull request against `main` opened with
+`peter-evans/create-pull-request` -- the same mechanism the ISO documentation
+PR already uses, under the same never-merge rule. It was weekly against
+`testing` at first, and both were wrong. Weekly: Hummingbird is rolling and the
+factory republishes daily, so a weekly rev left Utah up to a week behind
+packages already built. Against `testing`: `sync-main-to-testing` force-resets
+`testing` to `main` whenever `testing` is ahead (the reusable sync's
+`force-reset` strategy), so a bump merged there was wiped at the next 22:20
+sync unless a promotion landed first. On `main` it reaches `testing` through
+that same sync.
 
 That pull request arrives with no checks on it. `create-pull-request` authors
 it as `github-actions[bot]` using the default `GITHUB_TOKEN`, and GitHub does
@@ -356,7 +360,10 @@ not fire `on: pull_request` workflows for that token; this repository holds no
 App or PAT credential to author it with instead. The build matrix is therefore
 a manual step -- push an empty commit to `automation/factory-pin`, or close and
 reopen the pull request, and `build.yml` runs. An empty check list on one of
-these is not a passing build.
+these is not a passing build. Do not "fix" that by having the workflow
+dispatch `build.yml` on the proposal branch: the reusable build pushes, signs
+and writes the layer cache on every non-`pull_request` event, so a dispatch
+publishes images built from an unreviewed branch.
 
 Renovate is not the mechanism here because the pin is an `ARG` indirection, not
 a `FROM image@sha256:` -- the built-in dockerfile manager cannot see it, and
