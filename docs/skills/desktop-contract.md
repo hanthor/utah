@@ -142,6 +142,27 @@ Do not wrap `bootc` in `sh -c` to sequence it: the bare binary's
 `install_exec_t` label is its SELinux entrypoint, and wrapped it ran as
 `initrc_t` with its `chcon` calls denied `mac_admin`. Pinned by
 `tests/test_unified_storage_unit.py`.
+## Boot-error noise is a bug (#444)
+
+`ujust report` attaches the current boot's error-priority journal, and on a
+fresh Utah it was nearly all noise, which buried the stack traces in #444.
+Each source was fixed at its root, verified on a booted VM, and is pinned by
+`tests/test_boot_noise.py`:
+
+- `Failed to resolve group 'plugdev'` / `'nintendo_switch'`, about 100 lines:
+  udev rules from libfido2 and common name groups nothing creates.
+  `sysusers.d/utah-udev-groups.conf` creates them.
+- `fchmod() of / failed: Read-only file system`: systemd's `root.conf`
+  (`z / 555`) cannot apply to the composefs root. `/etc/tmpfiles.d/root.conf`
+  masks it by name with a comment-only file.
+- `Creating mailbox file: No such file or directory` on every `useradd`:
+  clean-stage drops `/var/spool/mail`. `tmpfiles.d/utah-mail.conf` recreates it.
+- `error loading config '.../50-bluefin-bt-switch.conf': Invalid argument`:
+  common's file is comments only, which PipeWire 1.6 rejects. Utah's copy
+  adds a no-op `pulse.cmd = [ ]`; drop it once common's copy parses.
+
+When something new appears in `journalctl -b -p err` on a fresh VM, treat it
+the same way rather than filtering it out of the report.
 
 ## Tolerating a non-zero exit in a unit file
 
