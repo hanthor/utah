@@ -91,6 +91,18 @@ policy. Their payload matches the release and requires administrator
 authentication for all nine actions. The image contract requires both files;
 Utah does not layer a duplicate release install over Common's copy.
 
+## NoNewPrivileges and SELinux domain transitions
+
+Hummingbird's hardened units can set `NoNewPrivileges=yes` where Fedora's do
+not. Under NNP a domain transition needs an explicit `nnp_transition`
+permission, and when the targeted policy lacks one the daemon silently runs in
+`init_t` and fails on its first labelled write. avahi-daemon (0.9~rc4) is the
+known case (#443): it exited 255 every start, so mDNS never worked.
+`avahi-daemon.service.d/10-utah-selinux.conf` sets `NoNewPrivileges=no`; the
+daemon still runs confined as `avahi_t`. Spot others on a booted VM with
+`journalctl -b | grep nnp_transition` and `ps -eZ` (a daemon showing
+`init_t` is the symptom).
+
 ## Tolerating a non-zero exit in a unit file
 
 Tolerate an expected non-zero exit per command with the `ExecStart=-` prefix
