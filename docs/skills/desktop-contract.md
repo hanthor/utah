@@ -156,7 +156,7 @@ on `GjsPrivate.DBusImplementation`, gracefully degrading to an inert portal on G
 
 ## The OS logo is an os-release key
 
-GNOME Initial Setup's welcome page, Settings > About and fastfetch show the
+GNOME Initial Setup's welcome page and Settings > About show the
 icon named by os-release `LOGO`. Fedora sets `LOGO=fedora-logo-icon` and
 Bluefin keeps it; common overlays the raptor at
 `/usr/share/pixmaps/fedora-logo-icon.png`. Hummingbird's os-release has no
