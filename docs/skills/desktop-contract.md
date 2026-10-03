@@ -96,6 +96,12 @@ The TOML's sections are the contract's table of contents:
   Editing the descriptor on a booted system changes nothing once the repo
   exists (`xa.applied-remotes`); use `flatpak remote-modify --collection-id`.
 
+  Once enabled, the preinstall's Flathub download held `graphical.target` for
+  60 s on first boot: common's unit is a oneshot wanted by `multi-user.target`.
+  `flatpak-preinstall.service.d/10-utah-background.conf` sets
+  `DefaultDependencies=no` with the equivalent explicit ordering, so it runs
+  in the background (the unit keeps its own `network-online.target` ordering).
+
 The common image pinned in `Containerfile` (`COMMON_IMAGE_SHA`) includes
 `projectbluefin/common#1284`, which removed Warehouse and smile from Bluefin's
 default Brewfile. Utah follows that upstream default set; the ordered app

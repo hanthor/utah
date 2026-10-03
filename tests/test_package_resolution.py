@@ -719,6 +719,19 @@ class FlathubCollectionIdTests(unittest.TestCase):
         proc, _ = self.run_snippet("Url=https://dl.flathub.org/repo/\n")
         self.assertNotEqual(proc.returncode, 0)
 
+    def test_preinstall_does_not_hold_up_boot(self):
+        # As a oneshot wanted by multi-user.target with default dependencies,
+        # graphical.target waited 60s for the Flathub download on first boot.
+        import configparser
+        dropin = ROOT / ("system_files/shared/usr/lib/systemd/system/"
+                         "flatpak-preinstall.service.d/10-utah-background.conf")
+        parser = configparser.ConfigParser(strict=False, interpolation=None)
+        parser.optionxform = str
+        parser.read_string(dropin.read_text())
+        self.assertEqual(parser["Unit"]["DefaultDependencies"], "no")
+        self.assertIn("basic.target", parser["Unit"]["After"].split())
+        self.assertIn("shutdown.target", parser["Unit"]["Conflicts"].split())
+
     def test_preinstall_service_is_in_the_preset(self):
         preset = (ROOT / "system_files/shared/usr/lib/systemd/system-preset/"
                   "85-utah-desktop.preset").read_text()
