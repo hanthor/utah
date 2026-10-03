@@ -427,7 +427,7 @@ build-ghcr base_name stream flavor kernel_pin="":
     done < packages/hummingbird.repo
     hb_revision=""
     if command -v curl >/dev/null 2>&1 \
-        && repomd="$(curl -fsSL --retry 3 "${hb_baseurl%/}/repodata/repomd.xml")" \
+        && repomd="$(curl -fsSL --retry 3 --connect-timeout 10 --max-time 60 "${hb_baseurl%/}/repodata/repomd.xml")" \
         && [[ "$repomd" =~ \<revision\>([^<]+)\</revision\> ]]; then
       hb_revision="${BASH_REMATCH[1]}"
     fi
