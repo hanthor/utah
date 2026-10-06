@@ -303,8 +303,17 @@ RUN --mount=type=bind,from=packages,source=/repository,target=/etc/utah-packages
 # is the NVIDIA and OGC step, not after the main transaction. The lint that
 # checks the result runs in the same layer: nothing can change between the two.
 # The home-label check runs first: clean-stage removes the utah-* helpers.
+#
+# /var/home is created after clean-stage (which strips all of /var except
+# cache) but before lint, so lint still proves the directory is covered by a
+# tmpfiles.d entry (utah-home.conf). The directory must ship in the image:
+# /home is a symlink to var/home and useradd ships HOME=/home (#576), so any
+# `useradd --create-home` fails on a dangling symlink -- the installer chroot
+# on a fresh install, the tacklebox customize container, and the live ISO
+# build all broke with "cannot create directory /home", exit 12 (#602).
 RUN /usr/local/libexec/utah-fix-home-labels --check && \
     /usr/local/libexec/utah-clean-stage && \
+    mkdir -p /var/home && \
     bootc container lint --fatal-warnings --skip nonempty-boot
 
 LABEL org.opencontainers.image.title="Utah"
