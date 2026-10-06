@@ -217,6 +217,13 @@ persistently at `/usr/local/libexec/utah-verify-desktop-contract`, which is
 also what puts it on the live guest. Never reference the parser by bare name
 on the guest: the overlay is not on the default PATH.
 
+That installed path is live-only. `/usr/local` is the admin's domain, not
+image content, so a bootc deployment never carries `/usr/local/libexec` --
+calling the verifier there on an installed system fails with exit 127.
+`luks-e2e.sh` copies `scripts/verify-desktop-contract.py` to the target over
+`scp_target` and runs it with the target's `python3` instead (stdlib-only,
+so no target dependencies).
+
 `iso/live/src/install-flatpaks.sh` pins the bootc-installer Flatpak bundle to
 a specific `tuna-os/bootc-installer` release rather than resolving
 `/releases/latest/download/` the way dakota-iso does: the bundle installs
