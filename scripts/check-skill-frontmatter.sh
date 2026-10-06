@@ -63,7 +63,7 @@ for f in "${skill_files[@]}"; do
 
     desc_clean=$(printf '%s' "$desc" | sed -E \
         -e 's/^description:[[:space:]]*//' \
-        -e 's/[[:space:]]*([|>][+-]?)[[:space:]]*$//' \
+        -e 's/^[|>][+-]?[[:space:]]*//' \
         -e 's/^["'\''"]|["'\''"]$//g' \
         -e 's/[[:space:]]+/ /g')
 

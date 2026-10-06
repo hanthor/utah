@@ -22,8 +22,9 @@ metadata:
 
 # CI Workflows
 
-Three workflows, all thin callers into `projectbluefin/actions@v1` reusables,
-each pinned to a SHA tagged `v1`:
+Build, promotion, and synchronization delegate to `projectbluefin/actions@v1`
+reusables pinned to a SHA tagged `v1`. The other workflows provide verification
+and maintenance gates:
 
 - `.github/workflows/build.yml` -- pull requests, pushes to `testing`, a
   manual dispatch. Top-level `permissions: {}`; each job
@@ -68,6 +69,15 @@ test pins `Date.now`) rather than trusting setup-to-assert to stay within
 one unit.
 
 ### CI guard scripts and test coverage
+
+The front-matter description budget measures the content after stripping the
+leading YAML block indicator (`>`, `|`, and their chomping modifiers). Cover
+both 256 and 257 characters for each indicator so a folded description cannot
+fail because the checker counts YAML syntax. `.github/actionlint.yaml` admits
+the GitHub-hosted `ubuntu-26.04` label while the pinned actionlint predates it;
+all other labels remain checked. Remove that compatibility entry when a newer
+actionlint release recognizes the label.
+
 
 The fast gate relies on pure-verdict Python scripts under `scripts/` to halt
 the build before expensive compilation or container builds run:
