@@ -486,3 +486,5 @@ manifest hash, and requires the installed guest digest to match. It never
 publishes or promotes an image. Preserve the source SHA, bootc status, serial
 logs and screenshots; earlier green VM runs do not verify a newer PR head.
 Runtime override tests restore their disposable drop-ins before returning.
+For rootless local-image inspection, run Skopeo inside `podman unshare`;
+host Skopeo cannot open that storage on runners that restrict its own unshare.

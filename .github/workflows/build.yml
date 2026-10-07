@@ -322,7 +322,7 @@ jobs:
         run: |
           set -euo pipefail
           just build-ghcr utah testing main 2>&1 | tee evidence/image-build.log
-          skopeo inspect --raw containers-storage:localhost/utah:testing > evidence/payload-manifest.json
+          podman unshare skopeo inspect --raw containers-storage:localhost/utah:testing > evidence/payload-manifest.json
           sha256sum evidence/payload-manifest.json > evidence/payload-manifest.sha256
           podman image inspect localhost/utah:testing > evidence/image-inspect.json
           printf 'ghcr.io/projectbluefin/utah:review-vm-%s\n' "$GITHUB_SHA" > evidence/image-ref.txt
