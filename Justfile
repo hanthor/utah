@@ -72,6 +72,7 @@ check:
     test -f scripts/mirror-shim.sh
     test -f scripts/install-v4l2loopback.sh
     test -f scripts/image-repo.sh
+    test -f scripts/regenerate-initramfs.sh
     test -f packages/RPM-GPG-KEY-fedora-44-primary
     test -f scripts/bootc_lifecycle.py
     test -f contracts/bluefin-desktop.toml
@@ -444,7 +445,18 @@ build-ghcr base_name stream flavor kernel_pin="":
       hb_revision="$(date -u -d "@${hb_revision}" +%Y-%m-%d)"
     fi
     echo "Hummingbird repository day: ${hb_revision}"
+    # Fixed epoch, never the commit time: the value is a cache key (an ARG is
+    # part of every layer key below it), so feeding the commit time would
+    # rebuild the transaction on every push. 1704067200 (2024-01-01) matches
+    # the Containerfile default and clean-stage.sh (utah#313). Probed here,
+    # after kernel-cache verification, so an unverified cache still fails
+    # before any podman use.
+    source_date_epoch="${SOURCE_DATE_EPOCH:-1704067200}"
+    # Podman >= 5.5 guard and the no --rewrite-timestamp rationale live in
+    # the shared helper.
+    mapfile -t epoch_args < <(scripts/podman-epoch-args.sh "${source_date_epoch}")
     podman build \
+      "${epoch_args[@]}" \
       "${base_args[@]}" \
       "${layer_cache_args[@]}" \
       --build-arg HUMMINGBIRD_REPO_DAY="$hb_revision" \
@@ -458,6 +470,13 @@ build-ghcr base_name stream flavor kernel_pin="":
       --tag "localhost/$image_name:{{ stream }}" \
       --file Containerfile .
 
+# Prove a rebuild that changes nothing produces the same image (utah#313).
+# Builds the flavor twice, uncached, with the wall-clock build args held
+# constant, and diffs the ordered layer digests. Two full builds: slow, and
+# deliberately not part of `just check` or the PR matrix.
+check-reproducible flavor="main":
+    bash scripts/check-reproducible-build.sh "{{ flavor }}"
+
 # Compose with an RPM repository already in local containers-storage. This uses
 # the same Containerfile transaction as CI without waiting for publication.
 build-local stream="testing" package_image="localhost/utah-packages:local-merged":
@@ -469,7 +488,13 @@ build-local stream="testing" package_image="localhost/utah-packages:local-merged
       exit 1
     }
     version="local-{{ stream }}-$(git rev-parse --short HEAD)"
+    # Fixed epoch matching the Containerfile and clean-stage.sh defaults
+    # (utah#313); probed after the package-image check, like build-ghcr
+    # probes after kernel-cache verification.
+    source_date_epoch="${SOURCE_DATE_EPOCH:-1704067200}"
+    mapfile -t epoch_args < <(scripts/podman-epoch-args.sh "${source_date_epoch}")
     podman build \
+      "${epoch_args[@]}" \
       --build-arg PACKAGE_IMAGE_REF="$package_image" \
       --build-arg IMAGE_NAME="{{ image }}" \
       --build-arg IMAGE_ID="{{ image }}" \

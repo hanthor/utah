@@ -38,6 +38,13 @@ class GnomeExtensionPatchTests(unittest.TestCase):
             with self.subTest(path=str(path.relative_to(GSCONNECT))):
                 self.assertNotIn(FINAL_SUBCLASS, path.read_text(encoding="utf-8"))
 
+    def test_gsconnect_build_directory_is_removed_after_install(self):
+        """The _build directory records ninja's wall-clock .ninja_log timestamps
+        and would churn its layer on every rebuild (utah#313). The script drops
+        it after meson install, as Blur My Shell does for its build/."""
+        script = (ROOT / "scripts/build-gnome-extensions.sh").read_text()
+        self.assertIn('rm -rf "${gsconnect_dir}/_build"', script)
+
     def test_dash_to_dock_does_not_import_the_removed_pointer_watcher(self):
         sources = sorted(DASH_TO_DOCK.rglob("*.js"))
         if not sources:

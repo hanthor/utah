@@ -1,7 +1,7 @@
 ---
 name: local-testing
 version: "1.0"
-last_updated: "2026-10-04"
+last_updated: "2026-10-07"
 id: local-testing
 one_line_purpose: Build, install, and boot Utah locally in a VM or live ISO.
 entry_point: docs/skills/local-testing.md
@@ -478,3 +478,11 @@ just boot-vm     # success: GDM appears and GNOME Shell renders in noVNC
 just iso testing
 just boot-iso    # success: live session renders; serial shows UTAH_LIVE_READY
 ```
+
+For review integration without a local KVM host, use an isolated verification
+branch and the read-only `build.yml` review VM job with both `review_vm` and
+`contract_only` true. The job builds only in runner-local storage, records its
+manifest hash, and requires the installed guest digest to match. It never
+publishes or promotes an image. Preserve the source SHA, bootc status, serial
+logs and screenshots; earlier green VM runs do not verify a newer PR head.
+Runtime override tests restore their disposable drop-ins before returning.

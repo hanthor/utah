@@ -133,29 +133,10 @@ comment, `Containerfile` ~L168; repo files copied at `Containerfile` L59).
 `Containerfile.kernel`'s builder stage may use the pinned Fedora 44 repository
 (`packages/fedora-44.repo`) strictly as a builder-only toolchain.
 
-Every allowlisted repository is attested on two axes. Its **origin** is pinned
-in `[repositories.baseurls]`: `verify-rpm-contract.py` fails a build that
-enables an allowlisted repository with a different `baseurl`, a `metalink`/
-`mirrorlist` (which DNF merges with any `baseurl` the section declares), or no
-`baseurl` at all. Its **fetch integrity** is attested too: the same check
-rejects `proxy=`, `sslverify=0`, `gpgcheck=0` (or its libdnf5 alias
-`pkg_gpgcheck=0`), and `repo_gpgcheck=0` on an allowlisted repository (#345).
-`proxy` and `sslverify=0` reroute or blind the fetch and are never approved;
-`gpgcheck`/`repo_gpgcheck` disable RPM signature verification and are rejected
-unless the repository is named in `[repositories.security]` with the option it
-is approved to leave disabled (`gpgcheck` covers both `gpgcheck` and
-`pkg_gpgcheck`). A repository not named there may not explicitly disable
-signature verification (an omitted option falls back to the dnf5 default and
-is not rejected). The same options set to a disabled value in the resolved dnf5
-`[main]` configuration are always rejected, since they apply to every
-repository and no per-repository approval covers them. A
-`[repositories.security]` entry for a repository not in `[repositories.allowed]`
-is rejected as approving nothing, as is any listed option other than
-`gpgcheck` or `repo_gpgcheck`. The two documented exceptions are
-`utah-packages` (RPMs are authenticated by the pinned package image and its OCI
-provenance, not an RPM GPG key, so both signature checks are disabled) and
-`nvidia-container-toolkit` (NVIDIA signs only its repomd.xml, so only package
-signature verification is disabled).
+Repository origin, key and fetch-integrity rules are documented in the
+[repository authenticity reference](package-contract/references/repository-authenticity.md).
+The verifier applies key pins before partial/wildcard override early returns,
+and propagates them into every runtime override scan.
 
 The install-source identity is single-sourced in `packages/*.repo`. Each repository
 participating in the package install transaction carries a `# utah-install: true`
@@ -179,9 +160,9 @@ than from the repository contents living in the image.
 The allowlist also runs **on-image**, against the composed image's runtime RPM
 repositories, not just the source files in `packages/`. `verify-rpm-contract.py`
 scans every `reposdir` dnf5 resolves at runtime, not a hardcoded list of
-defaults (#454, #513, #536). Repository override directories
-(`/etc/dnf/repos.override.d`) are not covered here; they are tracked
-separately (#527).
+defaults (#454, #513, #536). It also scans dnf5's repository override
+directories, `/etc/dnf/repos.override.d` and
+`/usr/share/dnf5/repos.override.d` (#524).
 
 - The `reposdir=` option in `/usr/share/dnf5/libdnf.conf.d/*.conf`,
   `/etc/dnf/libdnf5.conf.d/*.conf`, or `/etc/dnf/dnf.conf` replaces the
@@ -202,6 +183,31 @@ separately (#527).
   `[main]` the same way (later file wins, an empty `proxy=` clears an earlier
   one) and fails if the effective value sets a proxy or disables TLS
   verification (#352).
+- The override drop-in dirs are scanned **unconditionally**, as a separate loop
+  never folded into the `reposdir=`-derived list (#524). dnf5 reads them as
+  fixed constants -- a base image setting `reposdir=` does not add or remove
+  them (#536) -- so the gate scans them regardless of the runtime list; an
+  image that points `reposdir=` elsewhere still gets override coverage instead
+  of silently dropping it. A `.repo` override drop-in is partial by design: a
+  `[id]` section may set only `enabled=`/`priority=` with no `baseurl=` (that is
+  how the base disables a repo it ships), so the gate validates such a partial
+  override only for the keys it sets -- allowlist membership and the
+  `proxy=`/`sslverify=`/`gpgcheck=`/`pkg_gpgcheck=`/`repo_gpgcheck=` security
+  options -- but never rejects it for a missing `baseurl=`. A partial override
+  that leaves `enabled=` unset (for example `priority=` only) does not enable
+  the repo, so it passes for any id unless it sets a `proxy=` or disables
+  `sslverify=` or an unapproved signature check (`gpgcheck=`, `pkg_gpgcheck=`,
+  `repo_gpgcheck=`). A drop-in that sets any origin key (`baseurl=`, `metalink=` or
+  `mirrorlist=`) is pinned like any other enabled repo, so a `metalink=` or
+  `mirrorlist=` redirect fails the gate.
+- dnf5 matches override section names against repo ids as **globs**, so a
+  `[*]` or `[utah-*]` section applies to every matching repo. The gate cannot
+  enumerate those matches, so a wildcard override passes only when it cannot
+  widen the allowlist: it sets no origin key, does not set `enabled=` to a
+  true value, sets no `proxy=`, and disables neither `sslverify=` nor any
+  signature check (`gpgcheck=`, `pkg_gpgcheck=`, `repo_gpgcheck=`; no
+  `[repositories.security]` approval applies to a glob). A `[*]` drop-in
+  that sets only `priority=` or `enabled=0` passes.
 
 ## Printing and scanning gaps
 
@@ -325,7 +331,7 @@ Raise the overlay change as its own pull request against `main`; the bump PR
 then picks the fix up on its next rebuild.
 
 Current counts, per the README "Package parity" section: 61 Bluefin contract
-packages installed, 110 Utah additions (GNOME 51, base-image parity, device
+packages installed, 113 Utah additions (GNOME 51, base-image parity, device
 firmware, desktop services), 8 genuinely unavailable. `scripts/check-doc-counts.py` (part of
 `just check`) recomputes these from the manifests and fails if either
 document drifts from `site/data/packages.json`.

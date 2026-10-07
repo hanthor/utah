@@ -587,6 +587,13 @@ if [[ -n "${UTAH_E2E_PAYLOAD_CHECK-x}" ]]; then
     echo "  booted image: ${booted_image}"
 fi
 
+if [[ "${UTAH_E2E_REVIEW_CHECKS:-0}" == 1 ]]; then
+    ssh_target "printf '%s\\n' '${TEST_PASSWORD}' | sudo -S -p '' bootc status --json" > "${WORK}/bootc-status.json"
+    scp_target "${ROOT}/scripts/verify-rpm-contract.py" "${TEST_USER}@127.0.0.1:/tmp/utah-review-rpm-contract.py" >/dev/null
+    scp_target "${ROOT}/iso/scripts/review-installed.py" "${TEST_USER}@127.0.0.1:/tmp/utah-review-installed.py" >/dev/null
+    ssh_target "printf '%s\\n' '${TEST_PASSWORD}' | sudo -S -p '' python3 /tmp/utah-review-installed.py" > "${WORK}/review-checks.json"
+fi
+
 # clean-stage removes /var/lib from the image. Check boot-created state
 # before starting logrotate so the test cannot repair a missing tmpfiles rule.
 echo "Verifying logrotate state on the installed system..."

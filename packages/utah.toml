@@ -239,6 +239,15 @@ packages = [
     "linux-atm-libs",
     "pipewire-config-raop",
     "setools-console",
+    # Initrd unlock helpers (#564). Common's 90-passkeys-tpm.conf asks dracut
+    # for the fido2, tpm2-tss, pkcs11 and pcsc modules so a LUKS volume can be
+    # unlocked by TPM or a passkey/smart card. dracut installs tpm2-tss only
+    # with the tpm2 binary (tpm2-tools) and pcsc only with pcscd (pcsc-lite);
+    # pcsc-lite-ccid is the reader driver. Silverblue supplies all three to
+    # Bluefin; utah-packages builds them for Utah (utah-packages#364).
+    "tpm2-tools",
+    "pcsc-lite",
+    "pcsc-lite-ccid",
     # Network filesystems: base-image parity measured from the published
     # Bluefin image (baselines/GAP.md, #263). Bluefin inherits the full samba
     # closure from Silverblue; samba resolves today against the pinned
@@ -299,9 +308,9 @@ packages = [
     "libertas-firmware",
     # Intel/AMD CPU microcode updates, packaged separately from
     # linux-firmware (#382). microcode_ctl was deliberately absent because
-    # the factory had no recipe; the factory now publishes one. Early loading
-    # also needs the initramfs regenerated after this install: until #564
-    # lands, the shipped initramfs carries no microcode at all.
+    # the factory had no recipe; the factory now publishes one. The image's
+    # last package step regenerates the initramfs, which puts this and
+    # linux-firmware's amd-ucode in the early microcode cpio (#564).
     "microcode_ctl",
 ]
 
@@ -567,6 +576,23 @@ utah-packages = ["gpgcheck", "repo_gpgcheck"]
 # NVIDIA signs its repomd.xml (repo_gpgcheck=1) but not the package payloads,
 # so only package signature verification (gpgcheck) is disabled here.
 nvidia-container-toolkit = ["gpgcheck"]
+
+# The RPM GPG key URLs an allowlisted repository may fetch. verify-rpm-contract.py
+# rejects `gpgkey=` on an allowlisted repository that is not pinned here -- the
+# gate has no other way to know which key the repository should be presenting,
+# so an unpinned key is a key an override drop-in could silently swap for one
+# the attacker signed (#617). `utah-packages` deliberately has no entry: the
+# bind-mounted OCI repository carries no RPM GPG key of its own, so the section
+# does not name one. A repo id absent from [repositories.allowed] but listed here
+# is rejected as approving nothing, the same as [repositories.security].
+[repositories.gpgkeys]
+# Hummingbird's release key. The key file ships as
+# packages/RPM-GPG-KEY-redhat-release-2 and the Containerfile installs it
+# under /etc/pki/rpm-gpg/; packages/hummingbird.repo names only that local path.
+public-hummingbird-x86_64-rpms = ["file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release-2"]
+# NVIDIA's own Open Source Projects key, the one NVIDIA Corporation publishes
+# at the root of the libnvidia-container repo tree.
+nvidia-container-toolkit = ["https://nvidia.github.io/libnvidia-container/gpgkey"]
 
 # GNOME desktop components the utah-packages factory rebuilds with the .bfin
 # release tag, so a Bluefin image is never built against Hummingbird's server

@@ -3,7 +3,7 @@ ARG BASE_IMAGE=quay.io/hummingbird-community/bootc-os:latest@sha256:d4f6387e0751
 # Keep this pin in Utah so an image build is reproducible and can be reviewed
 # against the exact package set it consumes.
 ARG PACKAGE_IMAGE=ghcr.io/projectbluefin/utah-packages
-ARG PACKAGE_IMAGE_SHA=sha256:d257e97a0057e37da47995bb142c180e2352960ab13bd44594215616a395b717
+ARG PACKAGE_IMAGE_SHA=sha256:1564d34c91af2f1b4028bbd7b50e520c2cc0af4d38d6c2573774558708b1e486
 # CI keeps PACKAGE_IMAGE_SHA pinned. PACKAGE_IMAGE_REF supports a local image
 # in containers-storage, where no registry digest is available.
 ARG PACKAGE_IMAGE_REF=${PACKAGE_IMAGE}@${PACKAGE_IMAGE_SHA}
@@ -29,6 +29,21 @@ COPY scripts/install-v4l2loopback.sh /usr/local/libexec/utah-install-v4l2loopbac
 RUN /usr/local/libexec/utah-install-v4l2loopback base /out
 
 FROM ${BASE_IMAGE}
+
+# RPM 6 uses SOURCE_DATE_EPOCH for INSTALLTIME and INSTALLTID. It must be
+# exported before the first transaction, not only for final font-cache
+# cleanup: those header bytes remain in rpmdb.sqlite even after every mtime
+# is pinned. The value is fixed (2024-01-01), never the commit time: a fixed
+# value keeps this layer's cache key stable across commits, so docs-only
+# pushes reuse the cached transaction, and two builds of the same sources
+# record identical rpmdb timestamps (utah#313). clean-stage.sh pins the
+# remaining wall-clock mtimes to the same value; just build-ghcr passes it
+# to podman --source-date-epoch for the image-created metadata. All three spell the same constant, documented in
+# docs/skills/containerfile.md.
+# ARG, not ENV: every RUN in this stage already sees it, and an ENV would
+# persist in the image config and leak the epoch into iso/live, every
+# `podman run`, and any downstream FROM.
+ARG SOURCE_DATE_EPOCH=1704067200
 
 # Layer discipline, because it is where the build time goes.
 #
@@ -86,6 +101,7 @@ COPY scripts/install-packages.py \
      scripts/mirror-shim.sh \
      scripts/verify-efi-chain.sh \
      scripts/fix-home-labels.sh \
+     scripts/regenerate-initramfs.sh \
      scripts/install-v4l2loopback.sh \
      scripts/image-repo.sh \
      /tmp/utah-scripts/
@@ -135,6 +151,7 @@ RUN --mount=type=bind,from=v4l2loopback,source=/out,target=/tmp/utah-v4l2loopbac
                 mirror-shim.sh:utah-mirror-shim \
                 verify-efi-chain.sh:utah-verify-efi-chain \
                 fix-home-labels.sh:utah-fix-home-labels \
+                regenerate-initramfs.sh:utah-regenerate-initramfs \
                 install-v4l2loopback.sh:utah-install-v4l2loopback \
                 image-repo.sh:utah-image-repo; do \
       install -Dm 0755 "/tmp/utah-scripts/${pair%%:*}" "/usr/local/libexec/${pair##*:}" || exit 1; \
@@ -202,7 +219,15 @@ RUN --mount=type=bind,from=packages,source=/repository,target=/etc/utah-packages
       /usr/share/utah/bluefin.toml /usr/share/utah/utah.toml && \
     /usr/local/libexec/utah-fix-home-labels && \
     DNF="$(command -v dnf5 || command -v dnf)" && \
-    "$DNF" clean all && rm -rf /var/cache/libdnf5 /var/cache/dnf
+    "$DNF" clean all && rm -rf /var/cache/libdnf5 /var/cache/dnf && \
+    # These regenerated files contain timestamps or process-local SQLite state.
+    # Remove them in the producing layer, not only from the final merged rootfs.
+    rm -f /usr/lib/sysimage/libdnf5/transaction_history.sqlite \
+          /usr/lib/sysimage/libdnf5/transaction_history.sqlite-shm \
+          /usr/lib/sysimage/libdnf5/transaction_history.sqlite-wal \
+          /var/log/dnf5.log* /var/cache/ibus/bus/registry \
+          /var/cache/ldconfig/aux-cache \
+          /var/cache/swcatalog/cache/C-local-metainfo.xb
 
 # Per-image arguments. Nothing above this line may read them; see the note on
 # layer discipline at the top.
@@ -266,7 +291,15 @@ RUN mkdir -p /tmp/uupd && \
     /usr/local/libexec/utah-configure-branding && \
     /usr/local/libexec/utah-verify-desktop-contract /usr/share/utah/bluefin-desktop.toml && \
     /usr/local/libexec/utah-mirror-shim && \
-    /usr/local/libexec/utah-verify-efi-chain
+    /usr/local/libexec/utah-verify-efi-chain && \
+    # configure-services removes RPMs and regenerates transaction/cache residue.
+    # Keep the desktop layer itself deterministic, without sweeping build inputs.
+    rm -f /usr/lib/sysimage/libdnf5/transaction_history.sqlite \
+          /usr/lib/sysimage/libdnf5/transaction_history.sqlite-shm \
+          /usr/lib/sysimage/libdnf5/transaction_history.sqlite-wal \
+          /var/log/dnf5.log* /var/cache/ibus/bus/registry \
+          /var/cache/ldconfig/aux-cache \
+          /var/cache/swcatalog/cache/C-local-metainfo.xb
 
 # Dakota-compatible flavors: OGC is built and asserted before NVIDIA so the
 # NVIDIA path can bind its module to the exact kernel tree it will boot.
@@ -290,6 +323,10 @@ RUN --mount=type=bind,from=packages,source=/repository,target=/etc/utah-packages
     esac && \
     IMAGE_FLAVOR="${IMAGE_FLAVOR}" /usr/local/libexec/utah-verify-rpm-contract \
       /usr/share/utah/bluefin.toml /usr/share/utah/utah.toml && \
+    # The base image's initramfs predates every package installed above, so
+    # rebuild it now that the last one is in: early microcode and Common's
+    # TPM/passkey unlock modules only reach the initrd this way (#564).
+    /usr/local/libexec/utah-regenerate-initramfs && \
     # The package repository is now only ever bind mounted, so it is absent from
     # the committed image. Flip it disabled here -- the last step that installs
     # anything -- so later dnf calls on the image (the live ISO build's included)

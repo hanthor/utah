@@ -1,7 +1,7 @@
 ---
 name: containerfile
 version: "1.0"
-last_updated: "2026-10-02"
+last_updated: "2026-10-03"
 id: containerfile
 one_line_purpose: Edit the Containerfile without regressing layer count or cache hits.
 entry_point: docs/skills/containerfile.md
@@ -185,6 +185,25 @@ asserts it; `utah-install-v4l2loopback ogc` compiles against the OGC tree that
 `install-ogc-kernel.sh` preserves, which needs `CONFIG_VIDEO_DEV` in that
 kernel (enforced by its `required_config`).
 
+## The initramfs is regenerated after the last package install
+
+The base image ships an initramfs built before Utah installs anything, and
+bootc boots it as-is. Left alone it carried no early CPU microcode and none of
+Common's TPM/passkey unlock modules (`90-passkeys-tpm.conf`), which went
+unnoticed because the image booted fine (#564). `utah-regenerate-initramfs`
+runs at the end of the NVIDIA and OGC step, after `utah-verify-rpm-contract`:
+it rebuilds the initramfs of the one kernel with a `vmlinuz` under
+`/usr/lib/modules` (`dracut --no-hostonly --reproducible`; everything else
+comes from `dracut.conf.d`) and fails the build unless `lsinitrd` shows the
+early microcode cpio with both vendors' blobs and the `bootc ostree fido2
+tpm2-tss pkcs11 pcsc` modules.
+
+dracut refuses a module whose binaries are missing instead of skipping it, so
+a dracut.conf.d file from Common that names a new module means a package in
+`utah.toml` too: `tpm2-tss` needs `tpm2` (tpm2-tools) and `pcsc` needs
+`pcscd` (pcsc-lite). Check with
+`dracut --no-hostonly -f /var/tmp/t.img <kver>` on a booted VM.
+
 ## Clean and lint share a layer
 
 Everything above writes build-time residue that bootc lint rejects: dnf logs
@@ -194,6 +213,105 @@ last package install, which is the NVIDIA and OGC step, not after the main
 transaction. The lint that checks the result runs in the same layer
 (`bootc container lint --fatal-warnings --skip nonempty-boot`): nothing can
 change between the two (comment, `Containerfile`).
+
+The same step removes final-rootfs build residue. It drops the dnf5 transaction
+history -- `usr/lib/sysimage/libdnf5/transaction_history.sqlite` and its
+`-shm`/`-wal` companions -- build-time metadata nothing reads at runtime, but
+it carries a wall-clock mtime that churns its layer on every rebuild. It then
+pins the mtimes the build itself wrote under `/usr`, `/etc`, `/var` and `/boot`
+to `SOURCE_DATE_EPOCH`: chunkah splits those directories across layers, so any
+wall-clock mtime in a tar header changes that layer's digest. The pin also covers
+the directories the script rewrites itself -- `/`, `/var` (recursively, so the
+surviving `/var/cache/rpm-ostree` is included), `/run` and `/tmp` -- because
+removing an entry stamps the wall clock on the parent directory, and those
+entries ship in a layer too. A rebuild that changes nothing must produce an
+identical image (utah#313). This normalization lands in `utah-clean-stage`, the
+final layer, because chunkah reads the merged rootfs -- a touch there is the
+last write, so it wins over the wall-clock mtimes the package and extension
+steps left. The `touch` must pass `-h`: the tree carries symlinks whose target
+is not in the image (`/usr/lib/bootc/storage`, the malcontent `COPYING` links,
+the 32-bit `libstdc++.a` stubs), and a dereferencing `touch` exits non-zero on
+each one and fails the layer under `set -e`. `-h` stamps the link itself, which
+is the mtime the tar header carries anyway.
+It is not a blanket `touch` of `/usr`, and must not become one. A path RPM
+installed and the build never rewrote already carries a reproducible mtime --
+the one from the package payload, fixed by the pinned package image -- and
+re-stamping it breaks two things that read it. Fedora byte-compiles with
+`--invalidation-mode=timestamp` (`brp-python-bytecompile`), so each `.pyc`
+records the mtime its `.py` had: move the source without rewriting the `.pyc`
+and every stdlib import recompiles in memory. And `rpm -V` compares the same
+mtime, so it reports `T` for every file in the image. Neither shows on a booted
+bootc host -- ostree deploys with mtime 0, so the check is already lost there --
+but the ISO compose, CI and `podman run` all read the image as a container,
+where the stamp survives. So `clean-stage.sh` asks RPM for the mtime it gave
+each path (`rpm --root -qa --qf '[%{FILENAMES}\\t%{FILEMTIMES}\\n]'`) and pins
+only the mismatches: what RPM does not own (everything COPYed in, the GNOME
+extensions meson installs, the compiled schemas) and what the build rewrote
+after RPM wrote it (`ld.so.cache`, `sed -i` targets, every directory dnf wrote
+into). With no readable rpmdb -- a scratch tree in the unit tests -- the
+sweep falls back to pinning everything and says so on stderr.
+The epoch is fixed at 1704067200 (2024-01-01), never the commit time, in all
+three places that spell it (`Containerfile` ARG default, `clean-stage.sh`
+default, `just build-ghcr` default): feeding the commit time would change the
+ARG cache key on every push and rebuild the transaction each time, while a
+fixed value keeps docs-only pushes on the cached layers and still records
+identical rpmdb timestamps for identical sources.
+That pin re-stamps every `/usr/share/fonts` directory dnf wrote into, which
+invalidates the system font caches in the layers a container runs from, so the
+pin loop is followed by `fc-cache --sysroot="$CLEAN_ROOT" --force --system-only`
+with `SOURCE_DATE_EPOCH` exported. fontconfig accepts a cache under
+`/usr/lib/fontconfig/cache` only when its stored checksum equals the font
+directory's current mtime, and Fedora's `%transfiletriggerin` built those caches
+from the wall-clock mtimes dnf wrote. The rebuild removes the trigger caches'
+embedded wall-clock checksums for reproducibility and gives container readers
+(ISO compose, CI, `podman run`) caches matching the final font-directory mtimes.
+It must run after the pin, so the checksum records the final mtime, and its own
+output must then be re-pinned -- `fc-cache` writes with the wall clock, so
+leaving it would churn that layer. Use `fc-cache-64` directly when Fedora
+provides it: its `fc-cache` wrapper swallows architecture-specific failures,
+which must instead fail composition. `FC_CACHE` selects an explicit executable
+for isolated scratch-tree tests.
+The same principle applies at the source: `build-gnome-extensions.sh` removes
+GSConnect's `_build/` after `meson install`, exactly as it already removes
+Blur My Shell's `build/`, so the timestamped artifact never reaches the image
+to be normalized downstream. Prefer dropping such a directory where it is made
+over re-touching it in `utah-clean-stage`.
+The acceptance test for all of this is an outcome, not a unit test:
+`just check-reproducible [flavor]` builds the flavor twice, uncached, with the
+wall-clock build args held constant, and diffs the ordered layer digests
+(`scripts/check-reproducible-build.sh`). `--no-cache` is the point -- a second
+`podman build` of an unchanged Containerfile otherwise replays the layer cache
+and passes whatever the build scripts leave behind. Two full builds, so it is
+not in `just check` or the PR matrix; run it when changing anything that writes
+into the image. No gate runs it, so a change claiming reproducibility should
+cite its own run. The comparator checks every ordered native layer; do not squash or ignore layers to claim a passing
+result.
+
+### Timestamp discipline starts before the transaction
+
+RPM 6's `rpmtsCreate`/`rpmtsGetTime` honor `SOURCE_DATE_EPOCH`, so the final
+stage declares the fixed epoch as an `ARG` before any transaction (every `RUN`
+sees it; not `ENV`, which would persist in the published image config and
+leak into `iso/live`, `podman run` and downstream builds): the final RPM database
+would otherwise still differ in the `INSTALLTIME`/`INSTALLTID` header fields,
+not merely its file mtime. The build recipes pass `--source-date-epoch` to
+Podman (guarded on Podman >= 5.5 by `scripts/podman-epoch-args.sh`, warn-and-continue below it), which fixes the
+image-created metadata. Do not add `--rewrite-timestamp` or `--timestamp`:
+`--rewrite-timestamp` replaces every newly committed mtime later than the epoch
+with the epoch, and every Fedora payload mtime is later than 2024-01-01, so it
+clamps all RPM-owned files in the transaction layer -- the blanket `/usr`
+re-stamp the selective pin above exists to avoid; `--timestamp` rewrites all of
+them unconditionally. Both break RPM's Python timestamp-bytecode pairing and
+`rpm -V`. Native-layer header clamping is unnecessary for the published image:
+chunkah re-splits the merged rootfs, whose mtimes `clean-stage.sh` already
+fixes.
+Timestamp plumbing does not cover files whose bytes, not mtimes, carry
+wall-clock or run-specific state: dnf5 logs, transaction-history SQLite WAL/SHM
+state, and the regenerated ibus, ldconfig and swcatalog caches. Those files are
+removed at both producing RUN boundaries, before their bytes can reach a native layer; deleting them only in
+final cleanup leaves the earlier blobs nondeterministic. This targeted removal
+does not sweep `/tmp`, the generic-logo RPM or `/utah-cache`, which later
+stages still need.
 
 The one deliberate exception is `/var/home`, created after clean-stage but
 before lint in that same RUN. `/home` is a symlink to `var/home` and
