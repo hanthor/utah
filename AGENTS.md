@@ -1,7 +1,7 @@
 # Utah — Agent Operating Contract
 
 Utah composes [Bluefin](https://projectbluefin.io) on the Fedora Hummingbird
-`bootc-os` base. Experimental pre-alpha: it has a build, not users. Nothing is
+`os-minimal` base. Experimental pre-alpha: it has a build, not users. Nothing is
 published — no image, no ISO artifact, no installer.
 
 ## Read order
