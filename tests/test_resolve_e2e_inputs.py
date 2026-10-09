@@ -4,6 +4,10 @@ scripts/resolve-e2e-inputs.py selects immutable images from one trusted
 build run; every refusal branch must keep refusing (projectbluefin/utah#636).
 """
 import importlib.util
+import json
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -41,7 +45,6 @@ def artifact_dir(tmp, lines):
 
 class ResolveE2EInputsTests(unittest.TestCase):
     def test_happy_path_returns_pinned_refs(self):
-        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             out = gate.resolve(
                 good_run(), ["utah"],
@@ -51,8 +54,30 @@ class ResolveE2EInputsTests(unittest.TestCase):
             "ref": f"ghcr.io/projectbluefin/utah@{DIGEST}",
         }]})
 
+    def test_happy_path_tolerates_duplicate_digests_across_legs(self):
+        # Mirrors the reusable-build layout: one image-digest-testing-* dir
+        # per leg, each repeating the same digest in both line forms.
+        nvidia = "sha256:" + "d" * 64
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "digests"
+            for leg, name, digest in (("utah", "utah", DIGEST),
+                                      ("utah-nvidia", "utah-nvidia", nvidia)):
+                d = root / f"image-digest-testing-{leg}"
+                d.mkdir(parents=True)
+                (d / "digest.txt").write_text(f"{name}={digest}\n")
+                (d / "platforms.txt").write_text(f"{name}|amd64|{digest}\n")
+            (root / "image-digest-testing-utah" / "all.txt").write_text(
+                f"utah={DIGEST}\nutah|amd64|{DIGEST}\n")
+            out = gate.resolve(
+                good_run(), ["utah", "utah-nvidia"], str(root), REPO)
+        self.assertEqual(out, {"include": [
+            {"image": "utah", "digest": DIGEST,
+             "ref": f"ghcr.io/projectbluefin/utah@{DIGEST}"},
+            {"image": "utah-nvidia", "digest": nvidia,
+             "ref": f"ghcr.io/projectbluefin/utah-nvidia@{nvidia}"},
+        ]})
+
     def test_rejects_unsuccessful_run(self):
-        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(ValueError, "not a successful trusted"):
                 gate.resolve(
@@ -60,7 +85,6 @@ class ResolveE2EInputsTests(unittest.TestCase):
                     artifact_dir(tmp, [f"utah|amd64|{DIGEST}"]), REPO)
 
     def test_rejects_wrong_branch_and_event(self):
-        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             d = artifact_dir(tmp, [f"utah|amd64|{DIGEST}"])
             for bad in ({"head_branch": "main"}, {"event": "pull_request"}):
@@ -68,17 +92,16 @@ class ResolveE2EInputsTests(unittest.TestCase):
                     gate.resolve(good_run(**bad), ["utah"], d, REPO)
 
     def test_rejects_fork_and_foreign_workflow(self):
-        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             d = artifact_dir(tmp, [f"utah|amd64|{DIGEST}"])
-            for bad in ({"head_repository": {"full_name": "evil/fork"}},
+            for bad in ({"repository": {"full_name": "evil/fork"}},
+                        {"head_repository": {"full_name": "evil/fork"}},
                         {"path": ".github/workflows/other.yml"},
                         {"head_sha": "not-a-sha"}):
                 with self.assertRaisesRegex(ValueError, "not a successful trusted"):
                     gate.resolve(good_run(**bad), ["utah"], d, REPO)
 
     def test_rejects_unexpected_arch(self):
-        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(ValueError, "unexpected architecture"):
                 gate.resolve(
@@ -86,7 +109,6 @@ class ResolveE2EInputsTests(unittest.TestCase):
                     artifact_dir(tmp, [f"utah|arm64|{DIGEST}"]), REPO)
 
     def test_rejects_unknown_image_and_bad_digest(self):
-        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(ValueError, "unexpected image name or digest"):
                 gate.resolve(
@@ -98,7 +120,6 @@ class ResolveE2EInputsTests(unittest.TestCase):
                     artifact_dir(tmp, ["utah=not-a-digest"]), REPO)
 
     def test_rejects_conflicting_digests(self):
-        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             other = "sha256:" + "c" * 64
             with self.assertRaisesRegex(ValueError, "conflicting image digests"):
@@ -109,22 +130,19 @@ class ResolveE2EInputsTests(unittest.TestCase):
                     ]), REPO)
 
     def test_cli_end_to_end(self):
-        import json
-        import subprocess
-        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             run_f = Path(tmp) / "run.json"
             run_f.write_text(json.dumps(good_run()))
             art = Path(tmp) / "artifacts"
             art.mkdir()
             images = json.loads(subprocess.check_output(
-                ["python3", "scripts/flavors.py", "images"],
+                [sys.executable, "scripts/flavors.py", "images"],
                 text=True, cwd=ROOT))
             expected = [item["image"] for item in images]
             (art / "digests.txt").write_text("".join(
                 f"{name}|amd64|{DIGEST}\n" for name in expected))
             proc = subprocess.run(
-                ["python3", "scripts/resolve-e2e-inputs.py",
+                [sys.executable, "scripts/resolve-e2e-inputs.py",
                  str(run_f), str(art), REPO],
                 text=True, capture_output=True, cwd=ROOT)
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -133,7 +151,6 @@ class ResolveE2EInputsTests(unittest.TestCase):
             {item["image"] for item in out["include"]}, set(expected))
 
     def test_rejects_incomplete_flavor_set(self):
-        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(ValueError, "do not cover"):
                 gate.resolve(
