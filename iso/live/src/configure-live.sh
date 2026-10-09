@@ -125,12 +125,16 @@ touch /etc/bootc-installer/live-iso-mode
 
 # The Flatpak sees the host configuration under /run/host. Provide both an
 # autostart entry and an application entry for manual relaunch from the dock.
+# The dock pins utah-installer.desktop, so its icon must resolve. Icon=bluefin
+# pointed at nothing (no package or file provides it); ship the raptor art
+# under the entry's own name instead.
+install -Dm0644 "${SCRIPT_DIR}/images/utahraptor.png" /usr/share/pixmaps/utah-installer.png
 mkdir -p /etc/xdg/autostart /usr/share/applications
 cat >/etc/xdg/autostart/utah-installer.desktop <<EOF
 [Desktop Entry]
 Name=Utah Installer
 Exec=flatpak run --env=BOOTC_CUSTOM_RECIPE=/run/host/etc/bootc-installer/recipe.json ${INSTALLER_APP_ID}
-Icon=bluefin
+Icon=utah-installer
 Type=Application
 X-GNOME-Autostart-enabled=true
 EOF
@@ -139,7 +143,7 @@ cat >/usr/share/applications/utah-installer.desktop <<EOF
 Name=Utah Installer
 Comment=Install Utahraptor to your computer
 Exec=flatpak run --env=BOOTC_CUSTOM_RECIPE=/run/host/etc/bootc-installer/recipe.json ${INSTALLER_APP_ID}
-Icon=bluefin
+Icon=utah-installer
 Type=Application
 Categories=System;
 EOF
