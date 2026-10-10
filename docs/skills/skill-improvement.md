@@ -59,6 +59,15 @@ existing policy rather than an obsolete authoring guide.
 Factory-wide learnings go to `projectbluefin/common` as an issue with the
 learning, affected component, and evidence.
 
+## Review and merge integration
+
+Independently green manifest PRs can produce stale generated totals when both
+replace the same old count with the same new count: Git merges that line
+without a conflict. Validate the combined source, regenerate
+`site/data/packages.json` with `scripts/generate-site-data.py` and the prose
+counts with `scripts/check-doc-counts.py --write`, then run `just check` and
+pre-commit before committing the integration repair.
+
 ## Banned
 
 - Changelog files (`IMPROVEMENTS.md`, `CHANGELOG.md`, `SESSION.md`) — delete

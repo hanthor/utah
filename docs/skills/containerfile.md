@@ -83,6 +83,20 @@ In summary:
   included) do not fail on a `file://` baseurl that is no longer present. `just
   check` asserts the mount and refuses a `COPY --from=packages`.
 
+## Clock synchronization and TLS failures
+
+The desktop RUN appends `pool pool.ntp.org iburst` to `/etc/chrony.conf`
+when it is absent, preserving the vendor pool (#594). An unreachable NTP
+source can leave a fresh VM clock behind certificate validity dates; verify
+`chronyc sources` and clock synchronization before treating that failure as
+missing CA certificates. The public pool requires network access too.
+
+Keep the fallback idempotent and folded into the existing RUN, before its
+final metadata normalization so the configuration has a stable mtime. Validate
+changes with the download-integrity guard and `just check`; inspect the
+composed configuration and demonstrate chrony recovery on a booted VM for
+runtime acceptance. A source-string assertion alone cannot prove time sync.
+
 ## Where the build time goes
 
 Measured on hosted `ubuntu-24.04` runners, one run, kernel cache hit. The
