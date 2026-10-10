@@ -147,6 +147,14 @@ packages = [
     "alsa-utils",
     # Bluetooth printer backend, published by the pinned factory (#390).
     "bluez-cups",
+    # Boot splash (#461): factory-built, matching Bluefin's set (the metapackage
+    # and theme pull the libs and label/two-step plugins as dependencies).
+    # Theme selection and initramfs wiring (spinner default, dracut plymouth
+    # module) follow with the initramfs regeneration work; without them the
+    # BLS rhgb quiet entry still renders nothing.
+    "plymouth",
+    "plymouth-system-theme",
+    "plymouth-theme-spinner",
     # Intel VA-API iHD and both Media SDK/oneVPL runtime generations (#383).
     "intel-gmmlib",
     "libva-intel-media-driver",

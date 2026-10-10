@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-09",
+  "generated_at": "2026-10-10",
   "generator": "scripts/generate-site-data.py",
   "groups": [
     {
@@ -161,6 +161,9 @@
         "pciutils",
         "pipewire-config-raop",
         "pipewire-utils",
+        "plymouth",
+        "plymouth-system-theme",
+        "plymouth-theme-spinner",
         "poppler-utils",
         "pulseaudio-utils",
         "python3-pip",
@@ -230,7 +233,7 @@
     }
   ],
   "totals": {
-    "installed": 173,
+    "installed": 176,
     "unavailable": 7
   },
   "unavailable": [
