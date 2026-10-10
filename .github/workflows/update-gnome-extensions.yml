@@ -64,7 +64,7 @@ jobs:
             echo "|---|---|---|---|"
             while read -r p; do
               old=$(awk -F'|' -v path="$p" '$1 == path {print $2}' "$RUNNER_TEMP/extension-olds.txt")
-              new=$(git ls-files -s "$p" | awk '{print $2}')
+              new=$(git -C "$p" rev-parse HEAD)
               if [ "$old" = "$new" ]; then
                 ver="(unchanged)"
               else
