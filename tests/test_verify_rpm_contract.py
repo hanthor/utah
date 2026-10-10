@@ -1180,6 +1180,14 @@ class SupplyChainTests(unittest.TestCase):
         errors = self.module.repo_security_option_errors("repo", parser, "fedora.repo")
         self.assertIn("sslverify", errors[0])
 
+    def test_repo_security_option_errors_flags_sslcacert(self) -> None:
+        """A custom CA bundle re-anchors TLS trust and is never approved (#497)."""
+        parser = self._parser({"baseurl": "https://a.example.com/$basearch",
+                               "sslcacert": "/etc/pki/attacker/ca.crt"})
+        errors = self.module.repo_security_option_errors("repo", parser, "fedora.repo")
+        self.assertEqual(len(errors), 1)
+        self.assertIn("sslcacert", errors[0])
+
     def test_repo_security_option_errors_passes_when_clean(self) -> None:
         parser = self._parser({"baseurl": "https://a.example.com/$basearch"})
         self.assertEqual(self.module.repo_security_option_errors("repo", parser, "fedora.repo"), [])
@@ -1445,6 +1453,35 @@ class SupplyChainTests(unittest.TestCase):
         gpgkey_errors = [e for e in errors if "gpgkey" in e]
         self.assertEqual(len(gpgkey_errors), 1, errors)
         self.assertIn("Wildcard", gpgkey_errors[0])
+
+    def test_check_repo_sections_flags_sslcacert_in_partial_override(self) -> None:
+        """A drop-in setting only sslcacert= is rejected even though baseurl=
+        is absent and the section is a partial override (#497)."""
+        parser = self._parser({"priority": "1",
+                               "sslcacert": "https://attacker.example.com/ca.crt"})
+        errors = self.module.check_repo_sections(
+            parser, "/etc/dnf/repos.override.d/99-attacker.repo",
+            {"nvidia-container-toolkit"},
+            expected_baseurls={"nvidia-container-toolkit":
+                               ("https://nvidia.github.io/libnvidia-container/stable/rpm/$basearch",)},
+            is_override=True,
+        )
+        self.assertTrue(any("sslcacert" in e for e in errors), errors)
+
+    def test_check_repo_sections_flags_sslcacert_in_wildcard_override(self) -> None:
+        """A wildcard override that sets sslcacert= is rejected before glob match."""
+        parser = configparser.ConfigParser(interpolation=None)
+        parser["[*]"] = {"sslcacert": "https://attacker.example.com/ca.crt"}
+        errors = self.module.check_repo_sections(
+            parser, "/etc/dnf/repos.override.d/wild.repo",
+            {"nvidia-container-toolkit"},
+            expected_baseurls={"nvidia-container-toolkit":
+                               ("https://nvidia.github.io/libnvidia-container/stable/rpm/$basearch",)},
+            is_override=True,
+        )
+        cacert_errors = [e for e in errors if "sslcacert" in e]
+        self.assertEqual(len(cacert_errors), 1, errors)
+        self.assertIn("Wildcard", cacert_errors[0])
 
     def test_check_repo_sections_passes_when_gpgkey_matches_pin(self) -> None:
         parser = configparser.ConfigParser(interpolation=None)
@@ -2032,6 +2069,31 @@ class MainSectionSecurityTests(unittest.TestCase):
             )
             errors = self.module.main_section_security_errors([path], "dnf5 [main] config")
         self.assertEqual(len(errors), 2)
+
+    def test_sslcacert_in_main_is_reported(self) -> None:
+        """An sslcacert= in [main] re-anchors TLS trust for every repo (#497)."""
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            path = self._write_conf(
+                directory, "10-base.conf",
+                "[main]\nsslcacert=https://attacker.example.com/ca.crt\n",
+            )
+            errors = self.module.main_section_security_errors([path], "dnf5 [main] config")
+        self.assertEqual(len(errors), 1)
+        self.assertIn("sslcacert=https://attacker.example.com/ca.crt", errors[0])
+
+    def test_later_empty_sslcacert_clears_earlier_sslcacert(self) -> None:
+        """An empty sslcacert= in a later drop-in clears an earlier one, mirroring proxy."""
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            base = self._write_conf(
+                directory, "10-base.conf",
+                "[main]\nsslcacert=https://attacker.example.com/ca.crt\n",
+            )
+            override = self._write_conf(directory, "99-clear.conf", "[main]\nsslcacert=\n")
+            errors = self.module.main_section_security_errors(
+                [base, override], "dnf5 [main] config")
+        self.assertEqual(errors, [])
 
     def test_later_file_wins_for_effective_sslverify(self) -> None:
         """A later drop-in overrides an earlier sslverify=0, so only the effective value counts."""
