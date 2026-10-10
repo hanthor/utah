@@ -226,15 +226,15 @@ directories, `/etc/dnf/repos.override.d` and
   rejected outright, even on an allowlisted id) -- but never rejects it for a
   missing `baseurl=`. A partial override that leaves `enabled=` unset (for
   example `priority=` only) does not enable the repo, so it passes for any
-  id unless it sets a `proxy=`, disables `sslverify=`, fails an unapproved
-  signature check, or sets `gpgkey=`. A drop-in that sets any origin key
+  id unless it sets a `proxy=`, disables `sslverify=`, sets `sslcacert=`, fails
+  an unapproved signature check, or sets `gpgkey=`. A drop-in that sets any origin key
   (`baseurl=`, `metalink=` or `mirrorlist=`) is pinned like any other enabled
   repo.
 - dnf5 matches override section names against repo ids as **globs**, so a
   `[*]` or `[utah-*]` section applies to every matching repo. The gate cannot
   enumerate those matches, so a wildcard override passes only when it cannot
   widen the allowlist: no origin key, no `enabled=1`, no `proxy=`, no disabled
-  `sslverify=`, no signature check, no `gpgkey=` (#617). A `[*]` drop-in that
+  `sslverify=`, no `sslcacert=`, no signature check, no `gpgkey=` (#617). A `[*]` drop-in that
   sets only `priority=` or `enabled=0` passes.
 
 ## Printing and scanning gaps

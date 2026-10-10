@@ -103,7 +103,8 @@ FACTORY_PIN_RE = re.compile(r"^# factory-pin: (?P<digest>\S+)\s*$", re.MULTILINE
 # OVERRIDE_REPOS_DIRS (#524).
 DISABLED_VALUES: frozenset[str] = frozenset({"0", "false", "no", "off"})
 # Fetch-integrity options a repository may be approved to leave disabled via
-# [repositories.security]; proxy= and sslverify=0 are never approvable.
+# [repositories.security]; proxy=, sslverify=0, and sslcacert= are never
+# approvable.
 APPROVABLE_SECURITY_OPTIONS: tuple[str, ...] = ("gpgcheck", "repo_gpgcheck")
 # The config keys that set each approvable option. libdnf5 treats `gpgcheck` as
 # an alias of its canonical `pkg_gpgcheck` (last assignment wins), so either
@@ -1374,9 +1375,9 @@ def main() -> int:
                 expected_gpgkeys=repo_gpgkeys,
             )
         )
-    # A proxy= or sslverify=0 in the resolved [main] section of dnf.conf/libdnf5.conf
-    # applies to every allowlisted repository, so the per-section check above never
-    # inspects it. Resolve the [main] options the way libdnf5 does and report the
+    # A proxy=, sslverify=0, or sslcacert= in the resolved [main] section of
+    # dnf.conf/libdnf5.conf applies to every allowlisted repository, so the
+    # per-section check above never inspects it. Resolve the [main] options the way libdnf5 does and report the
     # effective values (utah#352, adjacent to #339).
     try:
         repo_errors.extend(
