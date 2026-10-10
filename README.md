@@ -3,7 +3,7 @@
 <!-- BEGIN E2E VERIFICATION -->
 [![Verified ISO desktop](docs/verification/screenshots/installed-fastfetch.png)](docs/verification/README.md)
 
-*LUKS ISO test passed for commit `a4607268f42e`. [CI run](https://github.com/projectbluefin/utah/actions/runs/37871100834); [screenshots and provenance](docs/verification/README.md).*
+*LUKS ISO test passed for commit `e34dc8bcf998`. [CI run](https://github.com/projectbluefin/utah/actions/runs/38041266015); [screenshots and provenance](docs/verification/README.md).*
 <!-- END E2E VERIFICATION -->
 
 †Utahraptor ostrommaysi
@@ -101,7 +101,7 @@ than being noticed later.
 | | count |
 | --- | --- |
 | Bluefin contract installed | **61** |
-| Utah additions (GNOME 51, base-image parity, device firmware, desktop services) | 112 |
+| Utah additions (GNOME 51, base-image parity, device firmware, desktop services) | 118 |
 | Genuinely unavailable | **7** |
 
 The install writes its resolved list to `/usr/share/utah/contract.txt` and the

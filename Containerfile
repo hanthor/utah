@@ -3,12 +3,12 @@ ARG BASE_IMAGE=quay.io/hummingbird-community/os-minimal:latest@sha256:b696a56375
 # Keep this pin in Utah so an image build is reproducible and can be reviewed
 # against the exact package set it consumes.
 ARG PACKAGE_IMAGE=ghcr.io/projectbluefin/utah-packages
-ARG PACKAGE_IMAGE_SHA=sha256:0f8595d5b67ced62104ec2f6a0a1b34beafa0ee684100573e91b1d401c1f66ab
+ARG PACKAGE_IMAGE_SHA=sha256:b911f329edaeff76d2ca25fb9c156812f56e5dcb80fe5ccf3162ff12a08fe03a
 # CI keeps PACKAGE_IMAGE_SHA pinned. PACKAGE_IMAGE_REF supports a local image
 # in containers-storage, where no registry digest is available.
 ARG PACKAGE_IMAGE_REF=${PACKAGE_IMAGE}@${PACKAGE_IMAGE_SHA}
 ARG COMMON_IMAGE=ghcr.io/projectbluefin/common
-ARG COMMON_IMAGE_SHA=sha256:39b8041fb0e88a0b001d8cddb168e841681e6db2f356dca45cdfc478a49c3a6b
+ARG COMMON_IMAGE_SHA=sha256:8c771a96b0392112a018ad7ebc91fddac17ad3f7ae77442d0a25bbdcf4f60864
 ARG BREW_IMAGE=ghcr.io/ublue-os/brew
 ARG BREW_IMAGE_SHA=sha256:2aaf87e3757466bc28d056505a651c7ca5c56fd28f6ff709b34f3f5dbc860e89
 
@@ -28,7 +28,49 @@ COPY packages/RPM-GPG-KEY-redhat-release-2 packages/RPM-GPG-KEY-fedora-44-primar
 COPY scripts/install-v4l2loopback.sh /usr/local/libexec/utah-install-v4l2loopback
 RUN /usr/local/libexec/utah-install-v4l2loopback base /out
 
+# Stage source origins without committing their COPY mtimes to the runtime image.
+FROM scratch AS inputs
+COPY packages/bluefin.toml packages/utah.toml contracts/bluefin-desktop.toml /usr/share/utah/
+COPY packages/hummingbird.repo packages/nvidia-container.repo packages/utah-packages.repo /etc/yum.repos.d/
+COPY packages/RPM-GPG-KEY-redhat-release-2 /etc/pki/rpm-gpg/
+COPY scripts/install-packages.py \
+     scripts/verify-rpm-contract.py \
+     scripts/build-gnome-extensions.sh \
+     scripts/install-ogc-kernel.sh \
+     scripts/install-nvidia.sh \
+     scripts/clean-stage.sh \
+     scripts/pin-build-mtimes.py \
+     scripts/configure-services.sh \
+     scripts/configure-branding.sh \
+     scripts/verify-desktop-contract.py \
+     scripts/verify-gnome-extensions.py \
+     scripts/mirror-shim.sh \
+     scripts/verify-efi-chain.sh \
+     scripts/fix-home-labels.sh \
+     scripts/install-v4l2loopback.sh \
+     scripts/image-repo.sh \
+     /tmp/utah-scripts/
+COPY --from=common /system_files/shared /tmp/utah-common
+COPY --from=common /system_files/bluefin /tmp/utah-bluefin
+COPY --from=brew /system_files /tmp/utah-brew
+COPY system_files/shared /tmp/utah-local
+
 FROM ${BASE_IMAGE}
+
+# RPM 6 uses SOURCE_DATE_EPOCH for INSTALLTIME and INSTALLTID. It must be
+# available before the first transaction, not only for final font cleanup.
+# Canonical build recipes pass a fixed epoch derived from the latest commit
+# affecting build input paths; documentation-only pushes keep the cache key.
+# They also enable guarded tar timestamp rewriting for generated whiteouts:
+# the per-layer normalizer rejects an epoch older than any RPM payload before
+# export, so unchanged packaged Python source/bytecode timestamps survive.
+# Direct builds retain the legacy fallback unless their caller supplies args.
+# ARG, not ENV: every RUN in this stage already sees it, and an ENV would
+# persist in the image config and leak the epoch into iso/live, every
+# `podman run`, and any downstream FROM.
+ARG SOURCE_DATE_EPOCH=1704067200
+ARG UTAH_REWRITE_TIMESTAMPS=0
+
 
 # Layer discipline, because it is where the build time goes.
 #
@@ -55,12 +97,9 @@ FROM ${BASE_IMAGE}
 # utah-packages.repo carries a `# factory-pin:` stamp mirroring
 # PACKAGE_IMAGE_SHA. It is the transaction's cache key for the factory: the
 # ARG change alone does not bust the layer on CI's buildah (#371).
-COPY packages/bluefin.toml packages/utah.toml contracts/bluefin-desktop.toml /usr/share/utah/
-COPY packages/hummingbird.repo packages/nvidia-container.repo packages/utah-packages.repo /etc/yum.repos.d/
 # Hummingbird signs its RPMs with Red Hat's release key 2 (fd431d51); the key
 # lets packages/hummingbird.repo run with gpgcheck=1 here and in the live ISO
 # build on top of this image.
-COPY packages/RPM-GPG-KEY-redhat-release-2 /etc/pki/rpm-gpg/
 # The package image is an RPM repository, not a runtime dependency. It is
 # bind mounted into the two RUN steps that install from it and never copied
 # into a layer: a COPY used to put the whole ~4 GB repository at
@@ -73,30 +112,10 @@ COPY packages/RPM-GPG-KEY-redhat-release-2 /etc/pki/rpm-gpg/
 # One layer for all of Utah's scripts. They are staged under /tmp and installed
 # by name in the RUN below, because a multi-source COPY cannot rename and
 # every downstream path expects the utah- prefix.
-COPY scripts/install-packages.py \
-     scripts/verify-rpm-contract.py \
-     scripts/build-gnome-extensions.sh \
-     scripts/install-ogc-kernel.sh \
-     scripts/install-nvidia.sh \
-     scripts/clean-stage.sh \
-     scripts/configure-services.sh \
-     scripts/configure-branding.sh \
-     scripts/verify-desktop-contract.py \
-     scripts/verify-gnome-extensions.py \
-     scripts/mirror-shim.sh \
-     scripts/verify-efi-chain.sh \
-     scripts/fix-home-labels.sh \
-     scripts/install-v4l2loopback.sh \
-     scripts/image-repo.sh \
-     /tmp/utah-scripts/
 # Common publishes Bluefin artwork, desktop defaults, Brewfiles, and setup
 # hooks in a separate profile from its shared system files. Both are required:
 # copying only /system_files/shared leaves a functional GNOME desktop that is
 # still visibly Hummingbird and has no default Flatpak set.
-COPY --from=common /system_files/shared /tmp/utah-common
-COPY --from=common /system_files/bluefin /tmp/utah-bluefin
-COPY --from=brew /system_files /tmp/utah-brew
-COPY system_files/shared /tmp/utah-local
 
 
 # Neutral login-screen artwork, Bluefin-LTS style (#378). generic-logos provides
@@ -113,7 +132,7 @@ ARG GENERIC_LOGOS_SHA256=2f9247f480788ef5cea4bc9f872bc5653ae0578fb7bec045f8b807c
 # files, and a COPY would be a layer of its own.
 # After Common's files are copied into place we rename its `00-entry.just` to
 # `00-common.just` so Utah's entry point (`system_files/.../00-entry.just`,
-# staged on the next line of this same RUN by `cp -a /tmp/utah-local/. /`)
+# staged on the next line of this same RUN by `cp -a /tmp/utah-inputs/tmp/utah-local/. /`)
 # can re-import it from a shallower depth than Common's recipes. On `just`
 # >= 1.56 the shallower import wins duplicate resolution, so Utah's
 # `60-custom.just` overrides Common's recipes in the live image. Earlier
@@ -122,12 +141,16 @@ ARG GENERIC_LOGOS_SHA256=2f9247f480788ef5cea4bc9f872bc5653ae0578fb7bec045f8b807c
 # (issue #449). The `just` >= 1.56 floor is enforced by
 # tests/test_ujust_overrides.py.
 RUN --mount=type=bind,from=v4l2loopback,source=/out,target=/tmp/utah-v4l2loopback,ro \
+    --mount=type=bind,from=inputs,source=/,target=/tmp/utah-inputs,ro \
+    cp -a /tmp/utah-inputs/usr/. /usr/ && \
+    cp -a /tmp/utah-inputs/etc/. /etc/ && \
     for pair in install-packages.py:utah-install-packages \
                 verify-rpm-contract.py:utah-verify-rpm-contract \
                 build-gnome-extensions.sh:utah-build-gnome-extensions \
                 install-ogc-kernel.sh:utah-install-ogc-kernel \
                 install-nvidia.sh:utah-install-nvidia \
                 clean-stage.sh:utah-clean-stage \
+                pin-build-mtimes.py:utah-pin-build-mtimes \
                 configure-services.sh:utah-configure-services \
                 configure-branding.sh:utah-configure-branding \
                 verify-desktop-contract.py:utah-verify-desktop-contract \
@@ -137,18 +160,19 @@ RUN --mount=type=bind,from=v4l2loopback,source=/out,target=/tmp/utah-v4l2loopbac
                 fix-home-labels.sh:utah-fix-home-labels \
                 install-v4l2loopback.sh:utah-install-v4l2loopback \
                 image-repo.sh:utah-image-repo; do \
-      install -Dm 0755 "/tmp/utah-scripts/${pair%%:*}" "/usr/local/libexec/${pair##*:}" || exit 1; \
+      install -Dm 0755 "/tmp/utah-inputs/tmp/utah-scripts/${pair%%:*}" "/usr/local/libexec/${pair##*:}" || exit 1; \
     done && \
-    cp -a /tmp/utah-common/. / && \
-    cp -a /tmp/utah-bluefin/. / && \
-    cp -a /tmp/utah-brew/. / && \
+    cp -a /tmp/utah-inputs/tmp/utah-common/. / && \
+    cp -a /tmp/utah-inputs/tmp/utah-bluefin/. / && \
+    cp -a /tmp/utah-inputs/tmp/utah-brew/. / && \
     mv /usr/share/ublue-os/just/00-entry.just /usr/share/ublue-os/just/00-common.just && \
-    cp -a /tmp/utah-local/. / && \
+    cp -a /tmp/utah-inputs/tmp/utah-local/. / && \
     cp -a /tmp/utah-v4l2loopback/. / && \
     rm -rf /tmp/utah-scripts /tmp/utah-common /tmp/utah-bluefin /tmp/utah-brew /tmp/utah-local && \
     rm -f /etc/dconf/db/distro.d/05-bluefin-searchlight-extension && \
     curl -fsSL "${GENERIC_LOGOS_URL}" -o /tmp/generic-logos.rpm && \
-    echo "${GENERIC_LOGOS_SHA256}  /tmp/generic-logos.rpm" | sha256sum --check --strict
+    echo "${GENERIC_LOGOS_SHA256}  /tmp/generic-logos.rpm" | sha256sum --check --strict && \
+    /usr/local/libexec/utah-pin-build-mtimes
 # The last line drops Common's settings for the Search Light extension. Utah no
 # longer ships that extension: its shader code calls set_shader_source, which
 # GNOME 51 removed, so it errored at load and failed the ISO end-to-end test.
@@ -202,7 +226,16 @@ RUN --mount=type=bind,from=packages,source=/repository,target=/etc/utah-packages
       /usr/share/utah/bluefin.toml /usr/share/utah/utah.toml && \
     /usr/local/libexec/utah-fix-home-labels && \
     DNF="$(command -v dnf5 || command -v dnf)" && \
-    "$DNF" clean all && rm -rf /var/cache/libdnf5 /var/cache/dnf
+    "$DNF" clean all && rm -rf /var/cache/libdnf5 /var/cache/dnf && \
+    rm -f /usr/lib/sysimage/libdnf5/transaction_history.sqlite \
+          /usr/lib/sysimage/libdnf5/transaction_history.sqlite-shm \
+          /usr/lib/sysimage/libdnf5/transaction_history.sqlite-wal \
+          /var/log/dnf5.log* /var/cache/ibus/bus/registry \
+          /var/cache/ldconfig/aux-cache \
+          /var/cache/swcatalog/cache/C-local-metainfo.xb && \
+    : > /etc/machine-id && \
+    rm -f /var/lib/systemd/random-seed && \
+    /usr/local/libexec/utah-pin-build-mtimes
 
 # Per-image arguments. Nothing above this line may read them; see the note on
 # layer discipline at the top.
@@ -248,7 +281,8 @@ ARG UUPD_TIMER_SHA256=bbb5f098ec33d047bdef571e0bc112364df157e0f92d73e0febab703c4
 # own and cost forty seconds to commit a few megabytes. It lives in
 # scripts/mirror-shim.sh rather than inline, because as a bare && chain a
 # failure printed nothing at all -- see the comment at the top of that script.
-RUN mkdir -p /tmp/uupd && \
+RUN --mount=type=bind,from=common,source=/system_files/bluefin/usr/share/pixmaps,target=/tmp/utah-bluefin-pixmaps,ro \
+    mkdir -p /tmp/uupd && \
     curl -fsSL "https://github.com/ublue-os/uupd/releases/download/${UUPD_VERSION}/uupd_Linux_x86_64.tar.gz" \
       -o /tmp/uupd/uupd_Linux_x86_64.tar.gz && \
     echo "${UUPD_SHA256}  /tmp/uupd/uupd_Linux_x86_64.tar.gz" | sha256sum --check --strict && \
@@ -267,18 +301,17 @@ RUN mkdir -p /tmp/uupd && \
     /usr/local/libexec/utah-verify-desktop-contract /usr/share/utah/bluefin-desktop.toml && \
     /usr/local/libexec/utah-mirror-shim && \
     /usr/local/libexec/utah-verify-efi-chain && \
-    # Hummingbird's chrony pool (2.hummingbird.pool.ntp.org) is NXDOMAIN on
-    # the public internet, so chronyd runs with zero sources and the clock
-    # never disciplines. A host whose RTC is behind — a fresh GNOME Boxes VM
-    # is the reported case — then fails every TLS handshake with
-    # "certificate is not yet valid", which broke `ujust install-ai-tools`
-    # in #594. Keep Red Hat's pool first (it resolves inside their network)
-    # and fall back to the public pool everywhere else. This stays last in
-    # the RUN: check-download-integrity.py stops its &&-chain walk at comment
-    # lines, so a comment above would detach the uupd downloads from their
-    # sha256sum checks and fail the contract.
+    # Preserve the vendor pool and add a public fallback (#594), before
+    # generated metadata is normalized for this layer.
     (grep -q '^pool pool\.ntp\.org' /etc/chrony.conf || \
-      echo 'pool pool.ntp.org iburst' >> /etc/chrony.conf)
+      echo 'pool pool.ntp.org iburst' >> /etc/chrony.conf) && \
+    rm -f /usr/lib/sysimage/libdnf5/transaction_history.sqlite \
+          /usr/lib/sysimage/libdnf5/transaction_history.sqlite-shm \
+          /usr/lib/sysimage/libdnf5/transaction_history.sqlite-wal \
+          /var/log/dnf5.log* /var/cache/ibus/bus/registry \
+          /var/cache/ldconfig/aux-cache \
+          /var/cache/swcatalog/cache/C-local-metainfo.xb && \
+    /usr/local/libexec/utah-pin-build-mtimes
 
 # Dakota-compatible flavors: OGC is built and asserted before NVIDIA so the
 # NVIDIA path can bind its module to the exact kernel tree it will boot.
@@ -307,7 +340,8 @@ RUN --mount=type=bind,from=packages,source=/repository,target=/etc/utah-packages
     # anything -- so later dnf calls on the image (the live ISO build's included)
     # do not fail on a file:// baseurl that no longer exists.
     sed -i 's/^enabled=1$/enabled=0/' /etc/yum.repos.d/utah-packages.repo \
-      && grep -q '^enabled=0$' /etc/yum.repos.d/utah-packages.repo
+      && grep -q '^enabled=0$' /etc/yum.repos.d/utah-packages.repo && \
+    /usr/local/libexec/utah-pin-build-mtimes
 
 # Everything above writes build-time residue that bootc lint rejects: dnf logs
 # under /var/log, cockpit and dnf state under /run, and ~45 /var directories
@@ -323,10 +357,12 @@ RUN --mount=type=bind,from=packages,source=/repository,target=/etc/utah-packages
 # `useradd --create-home` fails on a dangling symlink -- the installer chroot
 # on a fresh install, the tacklebox customize container, and the live ISO
 # build all broke with "cannot create directory /home", exit 12 (#602).
-RUN /usr/local/libexec/utah-fix-home-labels --check && \
+RUN --mount=type=bind,from=inputs,source=/tmp/utah-scripts,target=/utah-build-tools,ro \
+    /usr/local/libexec/utah-fix-home-labels --check && \
     /usr/local/libexec/utah-clean-stage && \
     mkdir -p /var/home && \
-    bootc container lint --fatal-warnings --skip nonempty-boot
+    bootc container lint --fatal-warnings --skip nonempty-boot && \
+    python3 /utah-build-tools/pin-build-mtimes.py
 
 LABEL org.opencontainers.image.title="Utah"
 LABEL org.opencontainers.image.description="A Hummingbird-based Bluefin GNOME workstation"

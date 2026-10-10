@@ -138,9 +138,11 @@ in `[repositories.baseurls]`: `verify-rpm-contract.py` fails a build that
 enables an allowlisted repository with a different `baseurl`, a `metalink`/
 `mirrorlist` (which DNF merges with any `baseurl` the section declares), or no
 `baseurl` at all. Its **fetch integrity** is attested too: the same check
-rejects `proxy=`, `sslverify=0`, `gpgcheck=0` (or its libdnf5 alias
+rejects `proxy=`, `sslverify=0`, any `sslcacert=`, `gpgcheck=0` (or its libdnf5 alias
 `pkg_gpgcheck=0`), and `repo_gpgcheck=0` on an allowlisted repository (#345).
-`proxy` and `sslverify=0` reroute or blind the fetch and are never approved;
+`proxy` and `sslverify=0` reroute or blind the fetch and are never approved, and any
+`sslcacert=` re-anchors TLS trust to a custom CA bundle and is likewise never
+approved (#497);
 `gpgcheck`/`repo_gpgcheck` disable RPM signature verification and are rejected
 unless the repository is named in `[repositories.security]` with the option it
 is approved to leave disabled (`gpgcheck` covers both `gpgcheck` and
@@ -204,11 +206,11 @@ directories, `/etc/dnf/repos.override.d` and
   base ships in `/etc/distro.repos.d` or `/usr/share/dnf5/repos.d` is enabled
   at runtime exactly as one in `/etc/yum.repos.d`, so scanning only the
   first would leave it invisible to the gate (#513).
-- A `proxy=` or `sslverify=0` in the resolved `[main]` section of the same dnf5
+- A `proxy=`, `sslverify=0`, or `sslcacert=` in the resolved `[main]` section of the same dnf5
   configs applies to every allowlisted repository, so the gate resolves
-  `[main]` the same way (later file wins, an empty `proxy=` clears an earlier
-  one) and fails if the effective value sets a proxy or disables TLS
-  verification (#352).
+  `[main]` the same way (later file wins, an empty value clears an earlier
+  one) and fails if the effective value sets a proxy, disables TLS
+  verification, or names a CA bundle (#352, #497).
 - The override drop-in dirs are scanned **unconditionally**, as a separate loop
   never folded into the `reposdir=`-derived list (#524). dnf5 reads them as
   fixed constants -- a base image setting `reposdir=` does not add or remove
@@ -218,21 +220,21 @@ directories, `/etc/dnf/repos.override.d` and
   `[id]` section may set only `enabled=`/`priority=` with no `baseurl=` (that is
   how the base disables a repo it ships), so the gate validates such a partial
   override only for the keys it sets -- allowlist membership, the
-  `proxy=`/`sslverify=`/`gpgcheck=`/`pkg_gpgcheck=`/`repo_gpgcheck=` security
+  `proxy=`/`sslverify=`/`sslcacert=`/`gpgcheck=`/`pkg_gpgcheck=`/`repo_gpgcheck=` security
   options, and the absence of any `gpgkey=` (a drop-in that names a trust
   anchor cannot tell which keys the underlying repo shipped, so it is
   rejected outright, even on an allowlisted id) -- but never rejects it for a
   missing `baseurl=`. A partial override that leaves `enabled=` unset (for
   example `priority=` only) does not enable the repo, so it passes for any
-  id unless it sets a `proxy=`, disables `sslverify=`, fails an unapproved
-  signature check, or sets `gpgkey=`. A drop-in that sets any origin key
+  id unless it sets a `proxy=`, disables `sslverify=`, sets `sslcacert=`, fails
+  an unapproved signature check, or sets `gpgkey=`. A drop-in that sets any origin key
   (`baseurl=`, `metalink=` or `mirrorlist=`) is pinned like any other enabled
   repo.
 - dnf5 matches override section names against repo ids as **globs**, so a
   `[*]` or `[utah-*]` section applies to every matching repo. The gate cannot
   enumerate those matches, so a wildcard override passes only when it cannot
   widen the allowlist: no origin key, no `enabled=1`, no `proxy=`, no disabled
-  `sslverify=`, no signature check, no `gpgkey=` (#617). A `[*]` drop-in that
+  `sslverify=`, no `sslcacert=`, no signature check, no `gpgkey=` (#617). A `[*]` drop-in that
   sets only `priority=` or `enabled=0` passes.
 
 ## Printing and scanning gaps
@@ -357,7 +359,7 @@ Raise the overlay change as its own pull request against `main`; the bump PR
 then picks the fix up on its next rebuild.
 
 Current counts, per the README "Package parity" section: 61 Bluefin contract
-packages installed, 112 Utah additions (GNOME 51, base-image parity, device
+packages installed, 118 Utah additions (GNOME 51, base-image parity, device
 firmware, desktop services), 7 genuinely unavailable. `scripts/check-doc-counts.py` (part of
 `just check`) recomputes these from the manifests and fails if either
 document drifts from `site/data/packages.json`.

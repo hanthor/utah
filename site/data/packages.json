@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-09",
+  "generated_at": "2026-10-10",
   "generator": "scripts/generate-site-data.py",
   "groups": [
     {
@@ -118,7 +118,9 @@
         "cracklib-dicts",
         "crypto-policies-scripts",
         "cups",
+        "cups-browsed",
         "cups-client",
+        "cups-filters",
         "cups-ipptool",
         "dbus-tools",
         "default-fonts-core-emoji",
@@ -131,6 +133,7 @@
         "fprintd",
         "fprintd-pam",
         "fuse-libs",
+        "ghostscript",
         "glycin-thumbnailer",
         "google-noto-sans-math-fonts",
         "google-noto-sans-mono-vf-fonts",
@@ -161,6 +164,9 @@
         "pciutils",
         "pipewire-config-raop",
         "pipewire-utils",
+        "plymouth",
+        "plymouth-system-theme",
+        "plymouth-theme-spinner",
         "poppler-utils",
         "pulseaudio-utils",
         "python3-pip",
@@ -230,7 +236,7 @@
     }
   ],
   "totals": {
-    "installed": 173,
+    "installed": 179,
     "unavailable": 7
   },
   "unavailable": [

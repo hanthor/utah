@@ -72,7 +72,7 @@ The TOML's sections are the contract's table of contents:
   `flatpak-nuke-fedora.service`, `brew-setup.service`, `dconf-update.service`,
   `bootc-unified-storage.service`, `input-remapper.service`,
   `ModemManager.service`, `cups.socket`, `systemd-boot-update.service`,
-  `uupd.timer`. Update policy delegates
+  `uupd.timer`, `bluefin-stats-refresh.timer`. Update policy delegates
   background updates to `uupd.timer`; `bootc-fetch-apply-updates.timer` and
   `bootc-fetch-apply-updates.service` are masked in `/etc` and `/usr/lib` (and
   disabled in `85-utah-desktop.preset`) so cross-vendor `/etc` 3-way merges
@@ -278,8 +278,9 @@ session journal and `gnome-extensions info <uuid>` (`State: ACTIVE`).
 
 ## The OS logo is an os-release key
 
-GNOME Initial Setup's welcome page and Settings > About show the
-icon named by os-release `LOGO`. Fedora sets `LOGO=fedora-logo-icon` and
+GNOME Initial Setup's welcome page shows the icon named by os-release
+`LOGO`. Distributor builds of Settings > About use the compiled PNG paths
+described below. Fedora sets `LOGO=fedora-logo-icon` and
 Bluefin keeps it; common overlays the raptor at
 `/usr/share/pixmaps/fedora-logo-icon.png`. Hummingbird's os-release has no
 `LOGO`, so Utah showed the generic GNOME foot with the raptor already on disk.
@@ -338,6 +339,11 @@ entry for `/usr/share/pixmaps/bluefin-gdm-logo.png` in
 `[configuration].file_contains` pins both the schema header and the
 asset path so a stray edit that points `logo` somewhere else fails the
 build.
+
+## About artwork and the panel icon (#318)
+
+See [the About artwork reference](desktop-contract/references/about-artwork.md)
+for compiled PNG paths, restoration after RPMs, and the symbolic panel icon.
 
 ## Services and login defaults
 
