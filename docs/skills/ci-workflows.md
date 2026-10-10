@@ -354,6 +354,15 @@ headroom for the largest flavor. The guard lives in the build script, so it
 holds for every caller (local `just iso`, the CI LUKS job, and any deliberate
 rerun), not just one workflow.
 
+### Tacklebox image pin
+
+The privileged tacklebox builder (`iso/scripts/build-iso-tacklebox.sh`) and
+the tacklebox ISO verifier step in `post-testing-e2e.yml` both read
+`config/tacklebox-image`, a single digest pin tracked by Renovate. Both reject
+a mutable tag before running the container. Updating only the builder default
+leaves verification executing unrelated code with root privileges; keep both
+consumers on this same file.
+
 ## Release and branch cadence, and the factory pin
 
 The cadence is RFC'd in #336. What runs today:

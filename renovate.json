@@ -14,6 +14,15 @@
       "currentValueTemplate": "latest",
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^config/tacklebox-image$/"],
+      "matchStrings": [
+        "(?<depName>ghcr\\.io/tuna-os/tacklebox):(?<currentValue>latest)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
     }
   ],
   "packageRules": [
