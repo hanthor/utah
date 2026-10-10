@@ -278,6 +278,8 @@ def main_section_security_errors(
     libdnf5 drop-in apply to every allowlisted repository, so the per-section
     check in `check_repo_sections` -- which only inspects `.repo` sections and
     never the [main] block -- never inspects them (utah#352, adjacent to #339).
+    `sslcacert=` in [main] likewise re-anchors TLS trust for every repository
+    and is always reported (#497).
     `gpgcheck=0`/`pkg_gpgcheck=0`/`repo_gpgcheck=0` in [main] likewise disable
     signature verification for every repository that does not override them;
     per-repository approval in [repositories.security] does not cover [main],
@@ -291,6 +293,7 @@ def main_section_security_errors(
     """
     proxy = ""
     sslverify = ""
+    sslcacert = ""
     signature: dict[str, tuple[str, str]] = {}
     for path in config_files:
         if not path.is_file():
@@ -315,6 +318,8 @@ def main_section_security_errors(
             proxy = parser.get("main", "proxy").strip()
         if parser.has_option("main", "sslverify"):
             sslverify = parser.get("main", "sslverify").strip()
+        if parser.has_option("main", "sslcacert"):
+            sslcacert = parser.get("main", "sslcacert").strip()
         for approval, keys in SIGNATURE_OPTION_KEYS.items():
             values = [
                 (key, parser.get("main", key).strip())
@@ -337,6 +342,12 @@ def main_section_security_errors(
         errors.append(
             f"[main] in {source} sets sslverify={sslverify}; disabling TLS verification "
             "accepts any certificate every allowlisted repository presents"
+        )
+    if sslcacert:
+        errors.append(
+            f"[main] in {source} sets sslcacert={sslcacert}; a custom CA bundle "
+            "lets every allowlisted repository present certificates no system "
+            "trust anchor would accept"
         )
     for key, value in signature.values():
         if value.lower() in DISABLED_VALUES:
@@ -664,7 +675,8 @@ def repo_security_option_errors(
     """Name options that reroute or weaken a repository's fetch.
 
     `proxy` and `sslverify=0` reroute or blind the fetch and are always
-    rejected. `gpgcheck` (or its libdnf5 alias `pkg_gpgcheck`) and
+    rejected, as is `sslcacert=`: a custom CA bundle lets the origin present
+    certificates no system trust anchor would accept (#497). `gpgcheck` (or its libdnf5 alias `pkg_gpgcheck`) and
     `repo_gpgcheck` disable RPM signature verification; they are rejected
     unless this repository is named in `[repositories.security]` with the
     option it is approved to leave disabled -- the digest-pinned utah-packages
@@ -693,6 +705,13 @@ def repo_security_option_errors(
             f"{subject} with "
             f"sslverify={sslverify}; disabling TLS verification accepts any certificate "
             "the origin presents"
+        )
+    sslcacert = parser.get(section_name, "sslcacert", fallback="").strip()
+    if sslcacert:
+        errors.append(
+            f"{subject} with "
+            f"sslcacert={sslcacert}; a custom CA bundle lets the origin present "
+            "certificates no system trust anchor would accept (#497)"
         )
     for approval, keys in SIGNATURE_OPTION_KEYS.items():
         if approval in approved:
