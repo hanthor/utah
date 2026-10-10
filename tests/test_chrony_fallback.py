@@ -25,7 +25,6 @@ class ChronyFallbackTest(unittest.TestCase):
     def test_hummingbird_pool_is_kept_not_replaced(self):
         # The vendor pool resolves inside Red Hat's network; the fix adds a
         # fallback beside it rather than deleting the shipped line.
-        self.assertNotIn("hummingbird.pool.ntp.org.*d", CONTAINERFILE)
         self.assertNotRegex(CONTAINERFILE, r"sed\s+.*hummingbird\.pool")
 
 
