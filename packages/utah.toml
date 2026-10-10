@@ -199,6 +199,11 @@ packages = [
     "cups",
     "cups-client",
     "cups-ipptool",
+    # Full driverless stack (#390): filters and browsing daemons from the
+    # factory; hplip/sane stay out until the factory builds them (#308).
+    "cups-browsed",
+    "cups-filters",
+    "ghostscript",
     "fprintd",
     "fprintd-pam",
     "poppler-utils",
