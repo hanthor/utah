@@ -266,7 +266,19 @@ RUN mkdir -p /tmp/uupd && \
     /usr/local/libexec/utah-configure-branding && \
     /usr/local/libexec/utah-verify-desktop-contract /usr/share/utah/bluefin-desktop.toml && \
     /usr/local/libexec/utah-mirror-shim && \
-    /usr/local/libexec/utah-verify-efi-chain
+    /usr/local/libexec/utah-verify-efi-chain && \
+    # Hummingbird's chrony pool (2.hummingbird.pool.ntp.org) is NXDOMAIN on
+    # the public internet, so chronyd runs with zero sources and the clock
+    # never disciplines. A host whose RTC is behind — a fresh GNOME Boxes VM
+    # is the reported case — then fails every TLS handshake with
+    # "certificate is not yet valid", which broke `ujust install-ai-tools`
+    # in #594. Keep Red Hat's pool first (it resolves inside their network)
+    # and fall back to the public pool everywhere else. This stays last in
+    # the RUN: check-download-integrity.py stops its &&-chain walk at comment
+    # lines, so a comment above would detach the uupd downloads from their
+    # sha256sum checks and fail the contract.
+    (grep -q '^pool pool\.ntp\.org' /etc/chrony.conf || \
+      echo 'pool pool.ntp.org iburst' >> /etc/chrony.conf)
 
 # Dakota-compatible flavors: OGC is built and asserted before NVIDIA so the
 # NVIDIA path can bind its module to the exact kernel tree it will boot.
