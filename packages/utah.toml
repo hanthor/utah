@@ -199,8 +199,10 @@ packages = [
     "cups",
     "cups-client",
     "cups-ipptool",
-    # Full driverless stack (#390): filters and browsing daemons from the
-    # factory; hplip/sane stay out until the factory builds them (#308).
+    # Full driverless stack (#390): filters and the cups-browsed daemon from
+    # the factory. cups-browsed.service is installed but not enabled, matching
+    # Fedora's preset; hplip/sane stay out until the factory builds them
+    # (utah-packages#308).
     "cups-browsed",
     "cups-filters",
     "ghostscript",
