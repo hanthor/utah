@@ -80,9 +80,11 @@ post-build verification workflows, not the complete workflow inventory:
   submodule updates. Each `.gitmodules` branch must name a real remote branch;
   `git submodule update --remote` cannot follow a tag written as a branch.
   The generated report reads upstream metadata through
-  `scripts/gnome-extension-shell-versions.py`; paths are passed as argv and
-  shell-version values are allow-listed before entering the Markdown table. Its dispatch uses
-  `contract_only=true` without `review_vm`, so it runs source contract checks
+  `scripts/gnome-extension-shell-versions.py`, which reuses the metadata
+  paths in `scripts/verify-gnome-extensions.py` (`SOURCE_EXTENSIONS`); update
+  that map when adding an extension. Paths are passed as argv and
+  shell-version values are allow-listed before entering the Markdown table.
+  Its dispatch uses `contract_only=true`, so it runs source contract checks
   only: it does not build an image or run the image-side extension verifier.
   A trusted full image build remains necessary before merge. No automated
   merge is enabled.

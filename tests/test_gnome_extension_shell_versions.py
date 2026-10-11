@@ -30,6 +30,40 @@ class ShellVersionReportTests(unittest.TestCase):
             )
             self.assertEqual(MODULE.shell_versions(extension), "51")
 
+    def test_uses_verifier_metadata_location_for_nested_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            extension = base / "tmp/tilingshell@ferrarodomenico.com"
+            (extension / "resources").mkdir(parents=True)
+            (extension / "resources/metadata.json").write_text('{"shell-version": ["51"]}')
+            self.assertEqual(MODULE.shell_versions(extension, base), "51")
+
+    def test_reports_each_extension_in_multi_extension_submodule(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            extension = base / "tmp/bluefin-bling"
+            for name, version in (("syncthing-toggle", "50"), ("power-status-color", "51")):
+                (extension / "extensions" / name).mkdir(parents=True)
+                (extension / "extensions" / name / "metadata.json").write_text(
+                    '{"shell-version": ["%s"]}' % version
+                )
+            self.assertEqual(
+                MODULE.shell_versions(extension, base),
+                "syncthing-toggle@projectbluefin.io: 50; power-status-color@projectbluefin.io: 51",
+            )
+
+    def test_every_submodule_maps_to_verifier_metadata(self) -> None:
+        import subprocess
+
+        paths = subprocess.run(
+            ["git", "config", "--file", ".gitmodules", "--get-regexp", r"^submodule\..*\.path$"],
+            cwd=MODULE.REPO_ROOT, capture_output=True, text=True, check=True,
+        ).stdout.split()[1::2]
+        for path in paths:
+            with self.subTest(path=path):
+                files = MODULE.metadata_files(MODULE.REPO_ROOT / path)
+                self.assertTrue(files and all(uuid for uuid, _ in files))
+
     def test_rejects_untrusted_metadata_for_markdown_table(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             extension = Path(tmp)

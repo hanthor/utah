@@ -3,22 +3,54 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import sys
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+EXTENSIONS_BASE = REPO_ROOT / "system_files/shared/usr/share/gnome-shell/extensions"
 
-def shell_versions(extension: Path) -> str:
-    """Read the known metadata locations and escape values for a Markdown table."""
-    candidates = (extension / "metadata.json", extension / "data/metadata.json.in")
-    metadata = next((candidate for candidate in candidates if candidate.is_file()), None)
-    if metadata is None:
-        return "?"
+# Reuse the verifier's metadata map so the report reads the same files the
+# source contract checks (many extensions keep metadata under src/ etc.).
+_SPEC = importlib.util.spec_from_file_location(
+    "verify_gnome_extensions", REPO_ROOT / "scripts/verify-gnome-extensions.py"
+)
+assert _SPEC is not None and _SPEC.loader is not None
+_VERIFIER = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_VERIFIER)
+SOURCE_EXTENSIONS: dict[str, str] = _VERIFIER.SOURCE_EXTENSIONS
 
+FALLBACK_LOCATIONS = ("metadata.json", "data/metadata.json.in")
+
+
+def metadata_files(extension: Path, base: Path = EXTENSIONS_BASE) -> list[tuple[str, Path]]:
+    """Return (uuid, metadata path) pairs for the extension submodule."""
+    try:
+        submodule = extension.resolve().relative_to(base.resolve())
+    except ValueError:
+        submodule = None
+    found = []
+    if submodule is not None:
+        for uuid, relative in SOURCE_EXTENSIONS.items():
+            rel = Path(relative)
+            if rel.parts[: len(submodule.parts)] == submodule.parts:
+                found.append((uuid, extension / rel.relative_to(submodule)))
+    if found:
+        return found
+    for location in FALLBACK_LOCATIONS:
+        if (extension / location).is_file():
+            return [("", extension / location)]
+    return []
+
+
+def read_versions(metadata: Path) -> str:
     try:
         data = json.loads(metadata.read_text().replace("@PACKAGE_VERSION@", "0"))
     except (OSError, json.JSONDecodeError):
+        return "?"
+    if not isinstance(data, dict):
         return "?"
 
     versions = data.get("shell-version")
@@ -31,6 +63,17 @@ def shell_versions(extension: Path) -> str:
     # Shell API versions are numeric. Reject anything else because this value
     # is rendered into a Markdown table in a write-enabled automation job.
     return ", ".join(versions) or "?"
+
+
+def shell_versions(extension: Path, base: Path = EXTENSIONS_BASE) -> str:
+    """Read the extension's metadata and escape values for a Markdown table."""
+    files = metadata_files(extension, base)
+    if not files:
+        return "?"
+    if len(files) == 1:
+        return read_versions(files[0][1])
+    # UUIDs come from the trusted in-repo map, not upstream content.
+    return "; ".join(f"{uuid}: {read_versions(path)}" for uuid, path in files)
 
 
 def main() -> int:
