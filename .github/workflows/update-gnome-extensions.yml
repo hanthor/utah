@@ -80,9 +80,8 @@ jobs:
               printf '| `%s` | `%s` | `%s` | %s |\n' "$p" "${old:0:12}" "${new:0:12}" "$ver"
             done <<< "$paths"
           } > "$RUNNER_TEMP/gnome-extensions-pr.md"
-          if git diff --quiet; then
-            exit 0
-          fi
+          # Always run create-pull-request, including on an empty diff, so it
+          # can close a stale automation PR after an upstream reversion.
 
       - name: Propose GNOME extension update
         id: propose
