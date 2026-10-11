@@ -12,10 +12,9 @@ status: active
 dependencies: []
 tags: [ci, workflows, actions, promotion]
 description: >-
-  build.yml contract gate, kernel-cache job, main/kernel matrix split,
-  promote-testing-to-main, sync-main-to-testing and update-bluefin-parity,
-  actions@v1 delegation, Renovate factory pin. Use when changing
-  .github/workflows/ or debugging a red run.
+  Build and contract jobs, promotion, branch sync, parity and extension
+  update workflows, reusable actions and Renovate pins. Use when editing
+  GitHub Actions or debugging CI.
 metadata:
   type: reference
 ---
@@ -77,6 +76,16 @@ post-build verification workflows, not the complete workflow inventory:
   `created` or `updated` (not on the parity diff alone), so a nightly run
   against an unmerged, unchanged bump branch does not re-dispatch for
   nothing.
+- `.github/workflows/update-gnome-extensions.yml` -- weekly and manual
+  submodule updates. Each `.gitmodules` branch must name a real remote branch;
+  `git submodule update --remote` cannot follow a tag written as a branch.
+  The generated report reads upstream metadata through
+  `scripts/gnome-extension-shell-versions.py`; paths are passed as argv and
+  shell-version values are allow-listed before entering the Markdown table. Its dispatch uses
+  `contract_only=true` without `review_vm`, so it runs source contract checks
+  only: it does not build an image or run the image-side extension verifier.
+  A trusted full image build remains necessary before merge. No automated
+  merge is enabled.
 - `.github/workflows/post-testing-e2e.yml` -- successful non-PR testing builds
   explicitly dispatch this, or manually supply a successful testing build run ID.
 
