@@ -37,8 +37,22 @@ jobs:
           # Word-splitting intended: one path per line, no spaces in tree.
           # shellcheck disable=SC2086
           echo "$paths" | xargs git submodule update --init --depth 1 --
-          # shellcheck disable=SC2086
-          git submodule update --remote --depth 1 -- $paths
+          # A shallow submodule checkout fetches only the remote default
+          # branch. Fetch each configured branch explicitly before selecting
+          # it, since some extensions track a non-default release branch.
+          git config --file .gitmodules --get-regexp '^submodule\..*\.path$' |
+            while read -r key path; do
+              name=${key#submodule.}
+              name=${name%.path}
+              branch=$(git config --file .gitmodules --get "submodule.$name.branch" || true)
+              if [ -n "$branch" ]; then
+                git -C "$path" fetch --depth=1 origin \
+                  "+refs/heads/$branch:refs/remotes/origin/$branch"
+                git -C "$path" checkout --detach "refs/remotes/origin/$branch"
+              else
+                git submodule update --remote --depth 1 -- "$path"
+              fi
+            done
           {
             echo "# GNOME extension bumps"
             echo
