@@ -1,7 +1,7 @@
 ---
 name: desktop-contract
 version: "1.0"
-last_updated: "2026-10-06"
+last_updated: "2026-10-11"
 id: desktop-contract
 one_line_purpose: Maintain Utah identity, Bluefin desktop defaults, and first-boot Flatpak policy.
 entry_point: docs/skills/desktop-contract.md
@@ -245,10 +245,11 @@ for the live image's own `installer-local` remote.
 ## GNOME extensions are pinned submodules
 
 Bluefin's GNOME extension submodules are retained with their normal build
-step. `.gitmodules` pins eight of them by URL and branch under
-`system_files/shared/usr/share/gnome-shell/extensions/` — appindicator,
-bazaar-integration, blur-my-shell, caffeine, custom-command-list,
-dash-to-dock, gradia-integration, and gsconnect. Search Light was dropped:
+step. `.gitmodules` pins all 16 extension trees by URL and branch under
+`system_files/shared/usr/share/gnome-shell/extensions/`. The weekly
+`update-gnome-extensions.yml` workflow advances the configured branches and
+opens a review PR; edit `.gitmodules` directly when changing a source or its
+tracked branch. Search Light was dropped:
 its shader code calls `set_shader_source`, which GNOME 51 removed, so the
 extension errored at load and failed the ISO end-to-end test on every
 flavor.
