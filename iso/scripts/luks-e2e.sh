@@ -35,6 +35,7 @@ WORK="${UTAH_E2E_WORK:-/var/tmp/utah-luks-e2e}"
 VM_RAM="${UTAH_E2E_RAM:-8192}"
 VM_CPUS="${UTAH_E2E_CPUS:-4}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "${ROOT}/iso/scripts/extension-state.sh"
 
 # The account the installer creates, and the one phase 6 logs in as.
 TEST_USER="${UTAH_E2E_USER:-utahtest}"
@@ -118,6 +119,10 @@ scp_live() { sshpass -p live scp "${SSH_OPTS[@]}" -P "${SSH_PORT}" "$@"; }
 ssh_target() {
     sshpass -p "${TEST_PASSWORD}" ssh "${SSH_OPTS[@]}" \
         -p "${SSH_PORT_INSTALLED}" "${TEST_USER}@127.0.0.1" "$@"
+}
+gnome_extension_info() {
+    local uuid="$1"
+    ssh_target "uid=\$(id -u); env BASH_ENV=/dev/null XDG_RUNTIME_DIR=/run/user/\$uid DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/\$uid/bus bash --noprofile --norc -c \"gnome-extensions info '${uuid}'\""
 }
 scp_target() {
     sshpass -p "${TEST_PASSWORD}" scp "${SSH_OPTS[@]}" \
@@ -938,7 +943,7 @@ if [[ -n "${EXT_CHECK}" ]]; then
         # reading once is the difference between a real verdict and a blank.
         state=""
         for _ in $(seq 1 24); do
-            state="$(ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"gnome-extensions info '${uuid}' 2>/dev/null\"" 2>/dev/null | grep -aE '^[[:space:]]*State:' | tail -1 | awk '{print $NF}' | tr -d '[:space:]' || true)"
+            state="$(gnome_extension_info "${uuid}" 2>/dev/null | extension_state_from_info || true)"
             [[ -n "${state}" ]] && break
             sleep 5
         done
@@ -950,12 +955,12 @@ if [[ -n "${EXT_CHECK}" ]]; then
             # `\$NF' to awk, every read came back empty, and the check passed
             # while asserting nothing.) Fail, and print the raw output.
             echo "  extension ${uuid}: state could not be read" >&2
-            ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"gnome-extensions info '${uuid}' 2>&1 | head -20\"" >&2 2>/dev/null || true
+            gnome_extension_info "${uuid}" 2>&1 | head -20 >&2 || true
             shot "installed-ext-unreadable-${uuid%%@*}" "${MONITOR_INSTALLED}" || true
             ext_failures+=("${uuid}: state could not be read")
             continue
         fi
-        if [[ "${state}" != "ACTIVE" && "${state}" != "ENABLED" ]]; then
+        if ! extension_state_is_active "${state}"; then
             echo "  extension ${uuid}: state=${state}" >&2
             ssh_target "env BASH_ENV=/dev/null bash --noprofile --norc -c \"journalctl --user -b --no-pager 2>/dev/null | grep -F '${uuid}' | grep -iE 'Error|TypeError|Exception|not a function' | tail -5\"" >&2 2>/dev/null || true
             shot "installed-ext-error-${uuid%%@*}" "${MONITOR_INSTALLED}" || true
