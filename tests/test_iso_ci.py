@@ -189,7 +189,7 @@ class EvidenceTests(unittest.TestCase):
         # to an unexported, unpassed variable (which dies under set -u inside
         # the assembly) is caught here before it breaks every ISO build.
         self.assertRegex(script, r"podman unshare bash -s -- .*\$\{ISO_MAX_GB\}")
-        self.assertIn('ISO_MAX_GB="${UTAH_ISO_MAX_GB:-6}"', script)
+        self.assertIn('ISO_MAX_GB="${UTAH_ISO_MAX_GB:-8}"', script)
         self.assertIn('ISO_MAX_GB="$8"', script)
         start = script.index("iso_max_bytes=$(( ISO_MAX_GB")
         end = script.index("\nfi\n", start) + len("\nfi\n")

@@ -39,7 +39,7 @@ post-build verification workflows, not the complete workflow inventory:
   expands that job from main flavors to every flavor in `config/flavors.json`.
   The review ISO defaults to zstd level 15 so all flavors fit for VM testing.
   Set `review_iso_compression_level=3` to measure the production ISO budget;
-  `evidence/iso-size.json` records the image size even when the 6 GiB guard
+  `evidence/iso-size.json` records the image size even when the 8 GiB guard
   fails. This path has read-only registry access and never publishes or signs
   the review image. For kernel-cache consumers, first build the matching signed
   cache through the normal pipeline.

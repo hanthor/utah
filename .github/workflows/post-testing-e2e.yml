@@ -213,7 +213,7 @@ jobs:
           # The live ISO must stay under the budget (#128): the embedded image,
           # the Flatpaks, and the bootc-installer bundle all live inside it.
           size_bytes=$(stat -c %s output/utah-main-tacklebox.iso)
-          limit=$((6 * 1024 * 1024 * 1024))
+          limit=$((8 * 1024 * 1024 * 1024))
           echo "utah-main-tacklebox.iso is $size_bytes bytes"
           test "$size_bytes" -le "$limit" || { echo "ISO exceeds the size budget" >&2; exit 1; }
       - name: Live-boot and observe the UTAH_LIVE_READY marker

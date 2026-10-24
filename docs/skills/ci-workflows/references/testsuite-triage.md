@@ -80,4 +80,4 @@ contract_only=true -f review_vm=true -f sha=<head-sha>`. This runs the full
 image build including `utah-verify-desktop-contract` plus an installed-VM
 check. `review_iso_compression_level=3` with `review_iso_all_flavors=true`
 measures the production ISO budget; per-flavor `evidence/iso-size.json`
-lands in the artifacts whether or not the 6 GiB guard passes.
+lands in the artifacts whether or not the 8 GiB guard passes.
