@@ -40,12 +40,15 @@ Utah is built across two repositories:
 
 ## Download and image streams
 
-- **Testing ISO (AMD / Intel):** [`utah-live-latest.iso`](https://projectbluefin.dev/utah-live-latest.iso) ([SHA-256 checksum](https://projectbluefin.dev/utah-live-latest.iso-CHECKSUM))
+- **Live ISO (AMD / Intel, Secure Boot off):** [`utah-live-latest.iso`](https://projectbluefin.dev/utah-live-latest.iso) ([SHA-256 checksum](https://projectbluefin.dev/utah-live-latest.iso-CHECKSUM)), built monthly from `:stable`
 - **Live versions & downloads:** [docs.projectbluefin.io/utah](https://docs.projectbluefin.io/utah)
 
-The testing ISO is hosted on projectbluefin.dev, not published by this
-repository's workflows (CI here only uploads `utah-live.iso` as a short-lived
-workflow artifact). Verify the download against its checksum before use.
+The live ISO is hosted on projectbluefin.dev and built by
+[`projectbluefin/dakota-iso`](https://github.com/projectbluefin/dakota-iso)
+(`build-iso-utah.yml`, monthly on the 8th, from `ghcr.io/projectbluefin/utah:stable`),
+not published by this repository's workflows (CI here only uploads
+`utah-live.iso` as a short-lived workflow artifact). Verify the download against
+its checksum before use.
 
 Like Bluefin, Utah builds four hardware flavors (`utah`, `utah-nvidia`,
 `utah-gaming`, `utah-nvidia-gaming`) from `config/flavors.json`:
