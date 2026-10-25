@@ -3,7 +3,18 @@ name: Execute stable release
 on:
   push:
     branches: [main]
+  # The weekly stable release (#336): every Monday after the nightly cycle has
+  # settled. It goes through the same e2e-evidence gate and release gate as a
+  # manual run, so a week with no E2E-green :testing releases nothing.
+  schedule:
+    - cron: "0 6 * * 1"
   workflow_dispatch:
+
+# One release at a time; a schedule that overlaps a manual run queues, never
+# cancels one mid-retag.
+concurrency:
+  group: utah-stable-release
+  cancel-in-progress: false
 
 permissions:
   id-token: write

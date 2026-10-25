@@ -87,6 +87,9 @@ def decide(
     workflow command. The annotations are the point: every outcome explains
     itself, because the previous version's skip was invisible.
     """
+    if event == "schedule":
+        return True, ["::notice title=stable release::Weekly scheduled release."]
+
     if event == "workflow_dispatch":
         return True, ["::notice title=stable release::Triggered manually."]
 
@@ -127,7 +130,7 @@ def main() -> int:
 
     head_refs: list[str] = []
     # Only worth a lookup when the cheap signals have not already decided it.
-    if args.event != "workflow_dispatch" and not args.message.startswith(
+    if args.event not in ("workflow_dispatch", "schedule") and not args.message.startswith(
         PROMOTION_PREFIX
     ):
         if args.sha and args.repository:

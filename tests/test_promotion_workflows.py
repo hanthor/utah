@@ -163,5 +163,29 @@ class EnvironmentContractTests(unittest.TestCase):
         self.assertEqual(self.run_step(step, world, matrix), 0)
 
 
+class WeeklyReleaseScheduleTests(unittest.TestCase):
+    """:stable releases weekly, through the same gate as any other release."""
+
+    def test_a_weekly_schedule_triggers_the_release_workflow(self):
+        triggers = RELEASE.get("on", RELEASE.get(True))
+        crons = [entry["cron"] for entry in triggers["schedule"]]
+        self.assertEqual(len(crons), 1)
+        minute, hour, dom, month, dow = crons[0].split()
+        # Exactly once a week: a fixed weekday, every day-of-month and month.
+        self.assertRegex(dow, r"^[0-6]$")
+        self.assertEqual((dom, month), ("*", "*"))
+        self.assertRegex(minute + hour, r"^\d+$")
+
+    def test_the_scheduled_run_still_passes_through_the_evidence_gate(self):
+        # A schedule must not become a way around the gate: the trigger check
+        # feeds the same e2e-evidence job, which feeds the release.
+        self.assertEqual(RELEASE["jobs"]["e2e-evidence"]["needs"], ["check-trigger", "variants"])
+        self.assertIn("e2e-evidence", RELEASE["jobs"]["execute"]["needs"])
+
+    def test_releases_are_serialized_and_never_cancelled_mid_retag(self):
+        self.assertEqual(RELEASE["concurrency"]["group"], "utah-stable-release")
+        self.assertIs(RELEASE["concurrency"]["cancel-in-progress"], False)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -22,7 +22,11 @@ The cadence is RFC'd in #336. What runs today:
   `:testing` backwards. `promote-testing-to-main.yml` is the daily 04:00 UTC
   heartbeat that refreshes the squash PR from the `testing` branch; it is not
   what moves image tags.
-- `:stable` moves in `execute-release.yml` on every promotion push to `main`.
+- `:stable` is released weekly: `execute-release.yml` runs on a Monday 06:00 UTC
+  schedule (a maintainer decision on #336), and also on a promotion push to
+  `main` or a manual dispatch. A scheduled run has no head commit, so
+  `scripts/release-trigger.py` treats the `schedule` event as a promotion by
+  itself; a run is serialized by the `utah-stable-release` concurrency group.
   First the `e2e-evidence` job runs `promotion-ratchet.py release-gate`: for
   each flavor it takes the digest `:testing` points at, recovers the commit it
   was built from, and requires the `e2e/post-testing/<image>` success status
@@ -37,9 +41,9 @@ The cadence is RFC'd in #336. What runs today:
   #773); bump both together, a test enforces it. If a scenario group goes red
   for a reason outside this repo, scope it with `gate_extra_tags`
   (actions#655) plus the matching `extra-tags` in `post-testing-e2e.yml` and a
-  tracking issue; never switch the whole gate off. A weekly promotion rather
-  than a per-promotion one is still an open question in #336 -- a maintainer
-  policy call, not a code gap; nothing in this tree should encode a guess.
+  tracking issue; never switch the whole gate off. A scheduled run whose
+  `:testing` has no recorded E2E evidence for its digests fails the gate, so
+  the release fails closed instead of skipping silently.
   The promotion PR's own gate (`promote-testing-to-main.yml`) keeps
   `run_e2e: false` on purpose: the pinned `reusable-promote-squash.yml` keys the
   E2E status to the `testing` branch tip, the tip-equality assumption this

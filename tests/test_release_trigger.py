@@ -75,6 +75,13 @@ class DecideTests(unittest.TestCase):
         self.assertTrue(ok)
         self.assertIn("::notice", "\n".join(notes))
 
+    def test_the_weekly_schedule_is_a_promotion_with_no_commit_message(self):
+        # A scheduled run has no head commit, so no subject and no PR lookup:
+        # the event alone decides, and it says so.
+        ok, notes = release_trigger.decide("schedule", "", [])
+        self.assertTrue(ok)
+        self.assertIn("Weekly scheduled release", "\n".join(notes))
+
     def test_only_the_first_line_of_the_message_is_read(self):
         # A commit body mentioning the phrase must not trigger a release.
         message = "fix: something\n\nThis reverts chore: promote testing to main\n"
