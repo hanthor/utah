@@ -43,17 +43,17 @@ Everything that is **true of the source repository right now**:
 - Identity, architecture, and the two-repository composition with
   `projectbluefin/utah-packages`.
 - The honest pre-alpha status, including which artifacts are published: the
-  testing live ISO, the `:testing` consumer tag after `post-testing-e2e`
-  validates a digest, and the rolling `:stable` tag that `execute-release.yml`
-  moves on each testing-to-main promotion behind the release gate (kept as the
-  interface by the #336 ruling).
+  live ISO (built monthly from `:stable` by `projectbluefin/dakota-iso`), the
+  `:testing` consumer tag after `post-testing-e2e` validates a digest, and the
+  rolling `:stable` tag that `execute-release.yml` releases weekly (Mondays
+  06:00 UTC) behind the release gate (kept as the interface by the #336 ruling).
 - The concise Known gaps list (Secure Boot and live-media boot paths, bootc
   update timers, ESP maintenance via `bootctl`, hardware/codec/driver
   validation, CUDA exclusion) — one bullet per gap; the docs page never
   carries a long form.
 - The Package parity table — both numbers and the byte-for-byte contract.
 - Verification record and provenance links (CI runs, screenshots).
-- The "Download and image streams" section: the testing ISO link and its
+- The "Download and image streams" section: the live ISO link and its
   SHA-256 checksum link, the pointer to `docs.projectbluefin.io/utah` for live
   versions and downloads (the catalog lives there, not in the README), the
   canonical flavor set from `config/flavors.json`, and the stream table.
@@ -105,7 +105,7 @@ this PR lands:
 - The hand-maintained GNOME-version statement. The `DriverVersionsCatalog`
   is the live source.
 - Any hand-written download URL in the wrapper. The README carries the
-  testing ISO and checksum links; duplicating them in the wrapper invites
+  live ISO and checksum links; duplicating them in the wrapper invites
   drift.
 
 ## Editing protocol
