@@ -139,7 +139,9 @@ screenshot-refresh PR too, not just testing-tag promotion — a LUKS-only
 concern in `docs/verification` still has to wait on the whole matrix
 composing cleanly. It updates only the README evidence block and
 `docs/verification/`, preserving the current README's other content. The
-repository must allow Actions to create pull requests; a denied write fails
+README links to the whole run, which can be red when the independent testsuite
+fails; the evidence update requires the LUKS and production-ISO jobs to pass.
+The repository must allow Actions to create pull requests; a denied write fails
 this job visibly, without deleting test artifacts. It does not auto-merge
 the evidence PR or imply a fresh pass for a different commit.
 

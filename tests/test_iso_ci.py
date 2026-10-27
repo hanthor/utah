@@ -243,6 +243,8 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(update(result, proof), result)
         self.assertIn("Keep this paragraph.", result)
         self.assertIn("actions/runs/123", result)
+        self.assertIn("may show a failure in independent tests", result)
+        self.assertIn("the LUKS and production ISO jobs passed", result)
 
     def test_production_iso_artifacts_follow_the_full_luks_matrix(self):
         import yaml
