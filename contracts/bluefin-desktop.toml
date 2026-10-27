@@ -358,4 +358,12 @@ disabled = [
   "openvpn-server@.service",
   "saned.socket",
   "ipp-usb.service",
+  # Apache httpd is pulled in by gnome-user-share's WebDAV, but Utah never runs
+  # the system daemon: WebDAV starts its own per-session httpd, so port 80 must
+  # stay closed. It ships disabled already; this asserts it stays off so a
+  # future enablement fails image verification. See #948.
+  "httpd.service",
+  "httpd.socket",
+  "httpd@.service",
+  "htcacheclean.service",
 ]

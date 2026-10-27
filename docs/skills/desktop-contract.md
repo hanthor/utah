@@ -447,19 +447,15 @@ The parity rollout (#868) added network daemons that Hummingbird's
 `99-default-disable.preset` must keep off. The `disabled` list in
 `contracts/bluefin-desktop.toml` (checked by `verify-desktop-contract.py`)
 fails the build if `dnsmasq.service`, `rpcbind.service`/`.socket`,
-`autofs.service`, `openvpn-{client,server}@.service`, `saned.socket` or
-`ipp-usb.service` is enabled; masked, static (ipp-usb is udev-started) or
-absent units count as off. Keep it in sync with `baselines/triage.toml`.
+`autofs.service`, `openvpn-{client,server}@.service`, `saned.socket`,
+`ipp-usb.service`, `httpd.service`, `httpd.socket`, `httpd@.service` or
+`htcacheclean.service` is enabled; masked, static or absent units count as
+off (Apache httpd, #948: WebDAV runs its own per-session httpd, so port 80
+stays closed). Keep it in sync with `baselines/triage.toml`.
 
 ### The fwupd-refresh unit pins a static user (#385)
 
-Hummingbird builds fwupd with `-Dsystemd_unit_user=""`, which expands the
-`@user@` template in `data/motd/fwupd-refresh.service.in` to `DynamicUser=yes`.
-Combined with the unit's `CacheDirectory=fwupdmgr`, every boot triggers
-systemd's pre-existing-public → `/var/cache/private/fwupdmgr` migration; in
-this bootc image the rename returns `EACCES` (a policy denial on `/var/cache`,
-not a plain-ownership problem), the unit exits 1, and firmware metadata never
-refreshes.
+Hummingbird builds fwupd with `-Dsystemd_unit_user=""`, which expands the `@user@` template in `data/motd/fwupd-refresh.service.in` to `DynamicUser=yes`. Combined with the unit's `CacheDirectory=fwupdmgr`, every boot triggers systemd's pre-existing-public → `/var/cache/private/fwupdmgr` migration; in this bootc image the rename returns `EACCES` (a policy denial on `/var/cache`, not a plain-ownership problem), the unit exits 1, and firmware metadata never refreshes.
 
 The fix pins the unit to a static user so the migration code never runs.
 Both halves must land together — the drop-in alone leaves the service with no
@@ -491,10 +487,8 @@ The daemon (`fwupd.service`) is unaffected: it runs as root with no
 `DynamicUser=` and uses `CacheDirectory=fwupd`, so its cache lives under
 `/var/cache/fwupd` directly with no dynamic-user migration path. Firmware
 flashing still goes through the daemon, which keeps its existing root
-lifecycle. The pairing is asserted by `FwupdRefreshDropInTests` in
-`tests/test_desktop_contract.py`.
+lifecycle. The pairing is asserted by `FwupdRefreshDropInTests` in `tests/test_desktop_contract.py`.
 
 ## Verification
 
-The source-only contract check runs in `just check`; the [verifier reference](desktop-contract/references/verifiers.md) describes the
-image-build and installed-image checks.
+The source-only contract check runs in `just check`; the [verifier reference](desktop-contract/references/verifiers.md) describes the image-build and installed-image checks.

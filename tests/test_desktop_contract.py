@@ -523,6 +523,30 @@ class ServiceMaskParityTests(unittest.TestCase):
         self.assertIn("bootc-fetch-apply-updates.timer", masked)
         self.assertIn("bootc-fetch-apply-updates.service", masked)
 
+    def test_desktop_contract_holds_httpd_disabled(self):
+        # Apache httpd ships via gnome-user-share's WebDAV but the system units
+        # must never run; #948 asserts they stay off in the contract so a future
+        # enablement fails image verification instead of landing undetected.
+        import tomllib
+
+        contract = tomllib.loads((ROOT / "contracts/bluefin-desktop.toml").read_text())
+        disabled = contract.get("services", {}).get("disabled", [])
+        for unit in (
+            "httpd.service",
+            "httpd.socket",
+            "httpd@.service",
+            "htcacheclean.service",
+        ):
+            self.assertIn(unit, disabled, f"{unit} must be held disabled")
+
+    def test_httpd_disabled_units_named_in_skill_doc(self):
+        # A disabled unit added to the contract without the doc following leaves
+        # the assertion unexplained; the reason travels with the #948 note.
+        skill_doc = (ROOT / "docs/skills/desktop-contract.md").read_text()
+        for unit in ("httpd.service", "httpd.socket", "httpd@.service"):
+            self.assertIn(unit, skill_doc, f"{unit} must be named in the skill doc")
+        self.assertIn("#948", skill_doc)
+
     def test_desktop_contract_services_listed_in_skill_doc(self):
         # The [services] section of the skill doc enumerates the units the
         # contract asserts; if a new unit is added to contracts/bluefin-desktop.toml
