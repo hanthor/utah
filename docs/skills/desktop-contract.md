@@ -283,20 +283,14 @@ Declaring GNOME 51 in `metadata.json` is necessary, not sufficient: both
 failures below passed the metadata check, built cleanly, and only showed up
 in a booted session's journal (`journalctl _UID=1000 | grep -i extension`).
 
-- **GSConnect** tracks upstream `GSConnect/gnome-shell-extension-gsconnect`
-  at `v73`. Earlier GSConnect subclassed `GjsPrivate.DBusImplementation`, a
-  final GType since GNOME 48, in `shell/clipboard.js`, `wl_clipboard.js` and
-  `service/utils/dbus.js`. Utah once text-patched only the first, so the
-  daemon still threw "Cannot inherit from a final type" on every login and
-  GSConnect never started. v73 stopped subclassing it (upstream 11be9b7f); the
-  build now greps the whole `src/` tree and fails if a subclass returns. The
-  `projectbluefin` fork it used to track only added the GNOME 51 declaration,
-  which upstream carries itself.
-- **Dash to Dock** is pinned to the v109 release commit on `master` (upstream
-  publishes no `extensions.gnome.org-v1xx` branch past v106). v106 imports
-  `resource:///org/gnome/shell/ui/pointerWatcher.js`, which GNOME 51 removed,
-  so the dock silently never loaded; upstream 38545156 moved it to
-  `Meta.CursorTracker`.
+- **Blur my Shell** is pinned to upstream `master` v77 (`b973ec8f`), beyond v76;
+  it fixes popup first-open handling, modal blur, and excess allocation while
+  painting. Metadata declares GNOME 51, but boot testing is still required.
+- **GSConnect** tracks v74. v73 removed final
+  `GjsPrivate.DBusImplementation` subclassing that had stopped its daemon at
+  login; the build scans all sources for regressions. Upstream declares GNOME 51.
+- **Dash to Dock** tracks v110 on `master` (no EGO branch past v106); v106's
+  removed `pointerWatcher.js` import was replaced by `Meta.CursorTracker`.
 
 `tests/test_gnome_extensions.py` covers both pinned sources. On a booted VM,
 copy the changed tree under `bootc usr-overlay`, restart `gdm`, then verify
