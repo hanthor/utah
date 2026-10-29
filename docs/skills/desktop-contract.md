@@ -279,9 +279,11 @@ Search Light was dropped: GNOME 51 removed `set_shader_source`, which its shader
 GSConnect's meson install skips `update_desktop_database`: Hummingbird and Utah
 lack `desktop-file-utils`. The system and glib-compile-schemas handle databases.
 
-Declaring GNOME 51 in `metadata.json` is necessary, not sufficient: both
-failures below passed the metadata check, built cleanly, and only showed up
-in a booted session's journal (`journalctl _UID=1000 | grep -i extension`).
+Declaring GNOME 51 in `metadata.json` is necessary, not sufficient: the
+GSConnect and Dash to Dock failures below passed the metadata check, built
+cleanly, and only showed up in a booted session's journal
+(`journalctl _UID=1000 | grep -i extension`). Blur my Shell's pin update is
+separate and still needs boot testing.
 
 - **Blur my Shell** is pinned to upstream `master` v77 (`b973ec8f`), beyond v76;
   it fixes popup first-open handling, modal blur, and excess allocation while
@@ -292,8 +294,9 @@ in a booted session's journal (`journalctl _UID=1000 | grep -i extension`).
 - **Dash to Dock** tracks v110 on `master` (no EGO branch past v106); v106's
   removed `pointerWatcher.js` import was replaced by `Meta.CursorTracker`.
 
-`tests/test_gnome_extensions.py` covers both pinned sources. On a booted VM,
-copy the changed tree under `bootc usr-overlay`, restart `gdm`, then verify
+`tests/test_gnome_extensions.py` checks the GSConnect and Dash to Dock pinned
+sources. On a booted VM, copy the changed tree under `bootc usr-overlay`,
+restart `gdm`, then verify
 `gnome-extensions info <uuid>` reports `State: ACTIVE`; inspect the session
 journal for load errors. The journal does not always carry them (#969): for
 an extension in `ERROR`, ask the shell for the text it recorded with
