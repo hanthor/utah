@@ -1,9 +1,9 @@
-ARG BASE_IMAGE=quay.io/hummingbird-community/os-minimal:latest@sha256:834747d185bee2b04c8fcb6212e37da885594542128de4728041ca2f87557eb8
+ARG BASE_IMAGE=quay.io/hummingbird-community/os-minimal:latest@sha256:712da83e76023496164d92c70d91658feb8703fbb1a5e4fc012cb0cf4a78056f
 # The package factory publishes a complete, digest-addressable RPM repository.
 # Keep this pin in Utah so an image build is reproducible and can be reviewed
 # against the exact package set it consumes.
 ARG PACKAGE_IMAGE=ghcr.io/projectbluefin/utah-packages
-ARG PACKAGE_IMAGE_SHA=sha256:688e21379c0d5fe58ade6715bba0c264716c7e5e6d4dd7dbeae14f1c87dfe827
+ARG PACKAGE_IMAGE_SHA=sha256:8a043fc491f660a9fa0eae2fccb636f307912c9bb9ec8070ede2066dfface383
 # CI keeps PACKAGE_IMAGE_SHA pinned. PACKAGE_IMAGE_REF supports a local image
 # in containers-storage, where no registry digest is available.
 ARG PACKAGE_IMAGE_REF=${PACKAGE_IMAGE}@${PACKAGE_IMAGE_SHA}
@@ -345,8 +345,7 @@ ARG UUPD_TIMER_SHA256=bbb5f098ec33d047bdef571e0bc112364df157e0f92d73e0febab703c4
 # own and cost forty seconds to commit a few megabytes. It lives in
 # scripts/mirror-shim.sh rather than inline, because as a bare && chain a
 # failure printed nothing at all -- see the comment at the top of that script.
-RUN --mount=type=bind,from=common,source=/system_files/bluefin/usr/share/pixmaps,target=/tmp/utah-bluefin-pixmaps,ro \
-    --mount=type=bind,from=artwork,source=/out/branding,target=/tmp/utah-artwork-branding,ro \
+RUN --mount=type=bind,from=artwork,source=/out/branding,target=/tmp/utah-artwork-branding,ro \
     mkdir -p /tmp/uupd && \
     curl -fsSL "https://github.com/ublue-os/uupd/releases/download/${UUPD_VERSION}/uupd_Linux_x86_64.tar.gz" \
       -o /tmp/uupd/uupd_Linux_x86_64.tar.gz && \
