@@ -57,6 +57,9 @@ on:
   schedule:
     # Nightly, after the 04:00-06:00 UTC testing build and Post-Testing E2E.
     - cron: '41 7 * * *'
+  # Test branch only (hanthor/utah): the fork has no dispatchable copy.
+  push:
+    branches: [spike/osi-dakota-2006418]
   pull_request:
     paths:
       - iso/raw/**
