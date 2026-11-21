@@ -1,0 +1,6 @@
+layers already present: 63; layers needed: 65 (2.0 GB)
+Deploying...done (6 seconds)
+Pruned images: 0 (layers: 0, objsize: 542 bytes)
+Queued for next boot: ghcr.io/projectbluefin/utah@sha256:b062118d3aaadfa8fb4ca65aad2eba5d6d3cf94f21b57ba2f3ffb07da9dd54af
+  Version: testing-20261121-b8cfc36
+  Digest: sha256:b062118d3aaadfa8fb4ca65aad2eba5d6d3cf94f21b57ba2f3ffb07da9dd54af

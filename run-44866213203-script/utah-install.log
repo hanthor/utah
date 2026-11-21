@@ -1,0 +1,61 @@
+==> 2026-11-21T04:39:35+00:00 Utah install started
+==> Live medium /dev/vda (root /dev/vda4); target /dev/vdb
+==> 02-copy.conf: [Partition] Type=c12a7328-f81f-11d2-ba4b-00a0c93ec93b CopyBlocks=/dev/vda2 Label=EFI-SYSTEM SizeMinBytes=536870912 SizeMaxBytes=536870912 
+==> 03-copy.conf: [Partition] Type=0fc63daf-8483-4772-8e79-3d69d8477de4 CopyBlocks=/dev/vda3 Label=boot SizeMinBytes=1073741824 SizeMaxBytes=1073741824 
+==> 04-copy.conf: [Partition] Type=4f68bce3-e8cd-4db1-96e7-fbcaf984b709 CopyBlocks=/dev/vda4 Label=root SizeMinBytes=24189599744 Encrypt=key-file 
+==> Copying the image with systemd-repart
+TYPE          LABEL      UUID                                 PART FILE            RAW SIZE      SIZE PADDING
+esp           EFI-SYSTEM 6fcb6840-5b5a-4f78-a3be-ce64feb9d516    0 02-copy.conf   536870912    → 512M    → 0B
+linux-generic boot       2f0829d1-7193-4570-8d73-13c1e8341338    1 03-copy.conf  1073741824      → 1G    → 0B
+root-x86-64   root       5b782d68-d984-4d0f-b252-d9392a302aee    2 04-copy.conf 49927925760   → 46.4G    → 0B
+                                                                                            Σ = 47.9G  Σ = 0B
+
+ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░
+ │ └─ 04-copy.conf                                                             
+ ├─ 03-copy.conf                                                               
+ └─ 02-copy.conf                                                               
+
+Applying changes to /dev/vdb.
+Wiped block device.
+Discarded entire block device.
+Successfully wiped file system signatures from future partition 0.
+Successfully wiped file system signatures from future partition 1.
+Successfully wiped file system signatures from future partition 2.
+Copying in '/dev/vda2' (512M) on block level into future partition 0.
+Copying in of '/dev/vda2' on block level completed.
+Syncing future partition 0 contents to disk.
+Block level copying and synchronization of partition 0 complete in 2.057543s (248.8M/s).
+Copying in '/dev/vda3' (1G) on block level into future partition 1.
+Copying in of '/dev/vda3' on block level completed.
+Syncing future partition 1 contents to disk.
+Block level copying and synchronization of partition 1 complete in 3.537980s (289.4M/s).
+Encrypting future partition 2...
+Successfully encrypted future partition 2.
+Copying in '/dev/vda4' (22.4G) on block level into future partition 2.
+Copying in of '/dev/vda4' on block level completed.
+Syncing future partition 2 contents to disk.
+Block level copying and synchronization of partition 2 complete in 1min 43.434298s (222.7M/s).
+Adding new partition 0 to partition table.
+Adding new partition 1 to partition table.
+Adding new partition 2 to partition table.
+Writing new partition table.
+Informing kernel about changed partitions...
+Partition table written.
+==> Block copy finished in 110s
+==> Target ESP=/dev/vdb1 boot=/dev/vdb2 root=/dev/vdb3
+==> /dev/vdb1 (vfat): F2F9-A109 -> D21C-70FA
+e2fsck 1.47.4 (6-Mar-2025)
+==> /dev/vdb2 (ext4): a08027af-3b90-4e41-a22f-bde9d99f89ce -> d0b77821-8334-45ba-a196-7475576f1aa4
+==> /dev/mapper/utah-install-root-3184 (btrfs): 0a98ca47-b7a9-4eb7-970b-7cf91ece10c6 -> 5bac2597-1c59-45b0-b070-cb0590d425d9
+==> rewrote 0a98ca47-b7a9-4eb7-970b-7cf91ece10c6 in boot/loader/entries/ostree-1.conf
+==> rewrote 0a98ca47-b7a9-4eb7-970b-7cf91ece10c6 in boot/loader/entries/utah-live.conf
+==> rewrote a08027af-3b90-4e41-a22f-bde9d99f89ce in boot/loader/entries/ostree-1.conf
+==> rewrote a08027af-3b90-4e41-a22f-bde9d99f89ce in boot/loader/entries/utah-live.conf
+==> rewrote a08027af-3b90-4e41-a22f-bde9d99f89ce in boot/grub2/bootuuid.cfg
+==> rewrote a08027af-3b90-4e41-a22f-bde9d99f89ce in efi/EFI/fedora/bootuuid.cfg
+==> rewrote a08027af-3b90-4e41-a22f-bde9d99f89ce in root/ostree/deploy/default/deploy/b9d8249c2a1df9e122e84e2a53347a52f50aad8e8cd1b8c46a190cf5b0e6d617.0/etc/fstab
+==> root is LUKS2 2510e569-2e93-4675-b70d-23518010dba3
+==> root filesystem grown: 47G
+==> boot entry ostree-1.conf: root=UUID=5bac2597-1c59-45b0-b070-cb0590d425d9 rootflags=subvol=/ rw boot=UUID=d0b77821-8334-45ba-a196-7475576f1aa4 console=tty1 console=ttyS0,115200n8 plymouth.ignore-serial-consoles rhgb quiet ostree=/ostree/boot.1/default/f5f972fbf67b69bbce29c8e84939d00265ceb37c6820ac02052866c8fc756920/0 rd.luks.uuid=2510e569-2e93-4675-b70d-23518010dba3
+==> firmware boot entry: Utah -> /EFI/fedora/shimx64.efi
+==> Utah installed to /dev/vdb in 113s

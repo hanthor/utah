@@ -1,0 +1,72 @@
+[04:37:14] === Stage 1: live boot of the raw disk image ===
+[04:37:14] starting VM live: qemu-system-x86_64 -name live -machine q35 -m 6144 -smp 4 -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd -drive if=pflash,format=raw,file=/mnt/spike/e2e/vars-live.fd -netdev user,id=n0,hostfwd=tcp:127.0.0.1:2240-:22 -device virtio-net-pci,netdev=n0 -vga none -device VGA,xres=1920,yres=1080 -device qemu-xhci -device usb-tablet -display none -serial file:/mnt/spike/e2e/live-serial.log -monitor unix:/mnt/spike/e2e/live-monitor.sock,server,nowait -qmp unix:/mnt/spike/e2e/live-qmp.sock,server=on,wait=off -accel kvm -cpu host -drive file=/mnt/spike/medium.raw,format=raw,if=none,id=medium,readonly=on -device virtio-blk-pci,drive=medium,bootindex=1 -drive file=/mnt/spike/e2e/install.qcow2,format=qcow2,if=none,id=target -device virtio-blk-pci,drive=target
+[04:37:43]   screenshot 00-grub-menu.png: Firmware -> shim -> GRUB on the medium; 'Utah Live' BLS entry is the default
+[04:37:56]   screenshot 01-live-session.png: Raw disk image booted as live media (utah.live, tmpfs overlay): GNOME session for the live user
+[04:37:56] === Stage 2: OS-Installer GUI ===
+[04:38:01]   installer frame ext=[0, 0, 500, 700]; maximizing (attempt 1)
+[04:38:06]   installer window maximized: frame ext=[0, 0, 1920, 977]
+[04:38:08]   screenshot 02-installer-language.png: OS-Installer autostarted in the live session: language page
+[04:38:09]   click list item 'English (United States)' at (960, 473) ext=[672, 414, 576, 55]
+[04:38:12]   screenshot 03-installer-welcome.png: Welcome page with the Utah logo and config text
+[04:38:14]   screenshot 04-installer-keyboard.png: Keyboard layout page
+[04:38:16]   screenshot 05-installer-disk.png: Disk selection: the empty 48 GB target /dev/vdb is offered; the 24 GB live medium is too small to pick
+[04:38:17]   click list item 'VirtIO Disk' at (960, 363) ext=[672, 304, 576, 54]
+[04:38:19]   Encrypt Files: {'how': 'none', 'path': '0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0', 'role': 'switch', 'ext': [672, 194, 576, 55]}
+[04:38:20]   click switch 'Encrypt Files' at (960, 253) ext=[672, 194, 576, 55]
+[04:38:31]   click label 'Encryption PIN' at (721, 295) ext=[678, 256, 87, 15]
+[04:38:40]   click label 'Confirm PIN' at (720, 361) ext=[678, 320, 85, 18]
+[04:38:46]   entry text lengths after typing: [12, 12]
+[04:38:47]   screenshot 06-installer-encryption.png: Encryption enabled with a passphrase (LUKS2 via systemd-repart Encrypt=key-file)
+[04:38:49]   screenshot 07-installer-confirm.png: Confirmation: the target disk will be erased
+[04:38:51]   screenshot 08-installer-summary.png: Summary page; the install script is already running in the background
+[04:39:00]   screenshot 09-installer-progress.png: Install running: block copy of the live medium onto the target
+[04:41:16]   installer finished 145s after confirmation
+[04:41:17]   screenshot 10-installer-done.png: Installation complete page
+[04:41:22]   screenshot 11-installer-log.png: OS-Installer's terminal view: repart block copy into LUKS2, UUID regeneration, live entry removed, timings
+[04:41:27] === Stage 3: first boot of the installed disk ===
+[04:41:27] starting VM installed: qemu-system-x86_64 -name installed -machine q35 -m 6144 -smp 4 -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd -drive if=pflash,format=raw,file=/mnt/spike/e2e/vars-installed.fd -netdev user,id=n0,hostfwd=tcp:127.0.0.1:2241-:22 -device virtio-net-pci,netdev=n0 -vga none -device VGA,xres=1920,yres=1080 -device qemu-xhci -device usb-tablet -display none -serial file:/mnt/spike/e2e/installed-serial.log -monitor unix:/mnt/spike/e2e/installed-monitor.sock,server,nowait -qmp unix:/mnt/spike/e2e/installed-qmp.sock,server=on,wait=off -accel kvm -cpu host -drive file=/mnt/spike/e2e/install.qcow2,format=qcow2,if=none,id=target -device virtio-blk-pci,drive=target,bootindex=1
+[plymouth-prompt] prompt on screen; watermark matched (difference 0.0 vs contrast 13.2 at (885, 995))
+[04:42:33] === Stage 3: gnome-initial-setup creates the user ===
+[04:42:33]   gnome-initial-setup runs as gnome-initial-setup-2
+[04:42:48]   initial-setup frame ext=[0, 0, 1024, 768]; maximizing (attempt 1)
+[04:42:52]   initial-setup frame ext=[0, 0, 1024, 768]; maximizing (attempt 2)
+[04:42:58]   initial-setup frame ext=[0, 0, 1024, 768]; maximizing (attempt 3)
+[04:43:04]   initial-setup frame ext=[0, 0, 1024, 768]; maximizing (attempt 4)
+[04:43:07]   initial-setup window could not be maximized; clicks use the centered-window fallback
+[04:43:08]   initial setup page 0: 'Welcome!'
+[04:43:10]   screenshot 13-gis-00-welcome.png: gnome-initial-setup on the installed system: Welcome!
+[04:43:13]   initial setup page 1: 'Typing'
+[04:43:15]   screenshot 13-gis-01-typing.png: gnome-initial-setup on the installed system: Typing
+[04:43:18]   initial setup page 2: 'Privacy'
+[04:43:19]   screenshot 13-gis-02-privacy.png: gnome-initial-setup on the installed system: Privacy
+[04:43:22]   initial setup page 3: 'Time Zone'
+[04:43:24]   screenshot 13-gis-03-time-zone.png: gnome-initial-setup on the installed system: Time Zone
+[04:43:27]   initial setup page 4: 'About You'
+[04:43:28]   window 1024x768 not maximized; assuming it is centered
+[04:43:28]   click text 'Full Name' at (948, 560) ext=[265, 363, 471, 50]
+[04:43:35]   window 1024x768 not maximized; assuming it is centered
+[04:43:35]   click text 'Username' at (920, 615) ext=[265, 418, 415, 50]
+[04:43:41]   screenshot 13-gis-04-about-you.png: gnome-initial-setup on the installed system: About You
+[04:43:44]   initial setup page 5: 'Set a Password for Utah Tester'
+[04:43:45]   window 1024x768 not maximized; assuming it is centered
+[04:43:45]   click password text 'Password' at (932, 486) ext=[230, 289, 508, 50]
+[04:43:51]   window 1024x768 not maximized; assuming it is centered
+[04:43:51]   click password text 'Confirm Password' at (912, 631) ext=[230, 434, 468, 50]
+[04:43:58]   screenshot 13-gis-05-set-a-password-for-utah-tester.png: gnome-initial-setup on the installed system: Set a Password for Utah Tester
+[04:44:01]   initial setup page 6: 'All done!'
+[04:44:03]   screenshot 13-gis-06-all-done.png: gnome-initial-setup on the installed system: All done!
+[04:44:33]   screenshot 14-first-boot-desktop.png: first boot: GNOME desktop for tester
+[04:44:50]   screenshot 14-first-boot-bootc-status.png: first boot: terminal on the desktop running `bootc status`
+[04:44:52]   baseline digest sha256:34b79218800e24259a0ed85e616e9611f6d3effc44d36aa8d19363c713419136
+[04:44:52] === Stage 4: bootc switch to the candidate digest ===
+[04:46:58]   staged: sha256:b062118d3aaadfa8fb4ca65aad2eba5d6d3cf94f21b57ba2f3ffb07da9dd54af
+[plymouth-prompt] prompt on screen; watermark matched (difference 0.0 vs contrast 13.2 at (885, 995))
+[04:48:25]   screenshot 21-switch-gdm.png: after bootc switch: GDM greeter offers the account created by gnome-initial-setup
+[04:49:00]   screenshot 22-switch-desktop.png: after bootc switch: GNOME desktop for tester
+[04:49:17]   screenshot 22-switch-bootc-status.png: after bootc switch: terminal on the desktop running `bootc status`
+[04:49:17] === Stage 5: bootc rollback ===
+[plymouth-prompt] prompt on screen; watermark matched (difference 0.0 vs contrast 13.2 at (885, 995))
+[04:50:31]   screenshot 31-rollback-gdm.png: after bootc rollback: GDM greeter offers the account created by gnome-initial-setup
+[04:51:06]   screenshot 32-rollback-desktop.png: after bootc rollback: GNOME desktop for tester
+[04:51:23]   screenshot 32-rollback-bootc-status.png: after bootc rollback: terminal on the desktop running `bootc status`
+[04:51:25] PASS: all stages

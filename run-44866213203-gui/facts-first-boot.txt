@@ -1,0 +1,55 @@
+BOOT_IMAGE=(hd0,gpt2)/boot/ostree/default-f5f972fbf67b69bbce29c8e84939d00265ceb37c6820ac02052866c8fc756920/vmlinuz-7.3.3-200.1.utah1.fc44.x86_64 root=UUID=41314833-bd58-4c36-8f30-136f6f0ddb12 rootflags=subvol=/ rw boot=UUID=f9d5b201-8c0e-4694-a7b4-8af8978e177e console=tty1 console=ttyS0,115200n8 plymouth.ignore-serial-consoles rhgb quiet ostree=/ostree/boot.1/default/f5f972fbf67b69bbce29c8e84939d00265ceb37c6820ac02052866c8fc756920/0 rd.luks.uuid=6a6b2e81-1385-4394-be4c-5559b1646416
+
+btrfs /dev/mapper/luks-6a6b2e81-1385-4394-be4c-5559b1646416
+ext4 /dev/vda2 ro,relatime,seclabel
+NAME                                          FSTYPE      FSVER LABEL      UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+sr0                                                                                                                            
+zram0                                         swap        1     zram0      08eee91b-e393-4320-91c4-31445fab563c                [SWAP]
+vda                                                                                                                            
+|-vda1                                        vfat        FAT32 EFI-SYSTEM E9F9-F4E7                                           
+|-vda2                                        ext4        1.0   boot       f9d5b201-8c0e-4694-a7b4-8af8978e177e  624.3M    29% /boot
+`-vda3                                        crypto_LUKS 2     luks-root  6a6b2e81-1385-4394-be4c-5559b1646416                
+  `-luks-6a6b2e81-1385-4394-be4c-5559b1646416 btrfs             root       41314833-bd58-4c36-8f30-136f6f0ddb12   38.2G    16% /var
+                                                                                                                               /sysroot/ostree/deploy/default/var
+                                                                                                                               /sysroot
+                                                                                                                               /etc
+Enforcing
+luks-6a6b2e81-1385-4394-be4c-5559b1646416 UUID=6a6b2e81-1385-4394-be4c-5559b1646416 none discard
+active
+active
+apiVersion: org.containers.bootc/v1
+kind: BootcHost
+metadata:
+  name: host
+spec:
+  image:
+    image: ghcr.io/projectbluefin/utah:testing
+    transport: registry
+  bootOrder: default
+status:
+  staged: null
+  booted:
+    image:
+      image:
+        image: ghcr.io/projectbluefin/utah:testing
+        transport: registry
+      version: testing-20261120-81bfb04
+      timestamp: 2026-11-13T21:08:31Z
+      imageDigest: sha256:34b79218800e24259a0ed85e616e9611f6d3effc44d36aa8d19363c713419136
+      architecture: amd64
+    cachedUpdate: null
+    incompatible: false
+    pinned: false
+    softRebootCapable: true
+    downloadOnly: false
+    store: ostreeContainer
+    ostree:
+      stateroot: default
+      checksum: 6efb35c804963de6ff306cb626f63f0c2383099452b1226b84ea1fe2350a0c38
+      deploySerial: 0
+    composefs: null
+  rollback: null
+  rollbackQueued: false
+  type: bootcHost
+  usrOverlay: null
+  readOnly: false

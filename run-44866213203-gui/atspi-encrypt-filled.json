@@ -1,0 +1,1479 @@
+[
+ {
+  "path": "0.0",
+  "role": "frame",
+  "name": "",
+  "text": "",
+  "states": [
+   "active",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "win.next-page",
+   "win.previous-page",
+   "win.quit",
+   "external.manage-disks",
+   "external.error-search",
+   "window.close",
+   "external.wifi-settings",
+   "window.minimize",
+   "win.reload-page",
+   "win.show-terminal",
+   "win.about-page",
+   "window.toggle-maximized",
+   "win.advance",
+   "external.reboot",
+   "default.activate"
+  ],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "navigation.pop"
+  ],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "Disk Encryption",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   170,
+   1920,
+   807
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "scroll pane",
+  "name": "",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   170,
+   1920,
+   316
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   170,
+   1920,
+   316
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   170,
+   1920,
+   316
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   268
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   268
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   268
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   268
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   268
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "list",
+  "name": "",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   164
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "switch",
+  "name": "Encrypt Files",
+  "text": "",
+  "states": [
+   "checked",
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   55
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   684,
+   194,
+   548,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   684,
+   210,
+   496,
+   18
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "label",
+  "name": "Encrypt Files",
+  "text": "Encrypt Files",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   684,
+   210,
+   496,
+   18
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1186,
+   194,
+   46,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0",
+  "role": "switch",
+  "name": "Encrypt Files",
+  "text": "",
+  "states": [
+   "checked",
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "toggle"
+  ],
+  "ext": [
+   1186,
+   206,
+   46,
+   26
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1",
+  "role": "list item",
+  "name": "Encryption PIN Encryption PIN",
+  "text": "\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   249,
+   576,
+   55
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   678,
+   249,
+   560,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   678,
+   249,
+   520,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0",
+  "role": "label",
+  "name": "Encryption PIN",
+  "text": "Encryption PIN",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   678,
+   256,
+   87,
+   15
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.1",
+  "role": "label",
+  "name": "Encryption PIN",
+  "text": "Encryption PIN",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   678,
+   256,
+   86,
+   15
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.2",
+  "role": "password text",
+  "name": "Encryption PIN",
+  "text": "\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf",
+  "states": [
+   "editable",
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "text.undo",
+   "text.redo",
+   "text.clear",
+   "misc.insert-emoji",
+   "menu.popup",
+   "misc.toggle-visibility",
+   "misc.toggle-direction",
+   "selection.select-all"
+  ],
+  "ext": [
+   678,
+   249,
+   468,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.1",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1198,
+   249,
+   34,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.1.0",
+  "role": "button",
+  "name": "Show Password",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   1198,
+   257,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2",
+  "role": "list item",
+  "name": "Confirm PIN Confirm PIN",
+  "text": "\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   304,
+   576,
+   54
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   678,
+   304,
+   560,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   678,
+   304,
+   520,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.0",
+  "role": "label",
+  "name": "Confirm PIN",
+  "text": "Confirm PIN",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   678,
+   311,
+   71,
+   15
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.1",
+  "role": "label",
+  "name": "Confirm PIN",
+  "text": "Confirm PIN",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   678,
+   311,
+   71,
+   15
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.2",
+  "role": "password text",
+  "name": "Confirm PIN",
+  "text": "\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf",
+  "states": [
+   "editable",
+   "focusable",
+   "focused",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "text.undo",
+   "text.redo",
+   "text.clear",
+   "misc.insert-emoji",
+   "menu.popup",
+   "misc.toggle-visibility",
+   "misc.toggle-direction",
+   "selection.select-all"
+  ],
+  "ext": [
+   678,
+   304,
+   508,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.1",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1198,
+   304,
+   34,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.1.0",
+  "role": "button",
+  "name": "Show Password",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   1198,
+   312,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   370,
+   576,
+   36
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   814,
+   370,
+   292,
+   36
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.0",
+  "role": "image",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   814,
+   370,
+   16,
+   36
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.1",
+  "role": "label",
+  "name": "Memorize this PIN well. Without it you will not be able to access your files.",
+  "text": "Memorize this PIN well. Without it you will not be able to access your files.",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   842,
+   370,
+   264,
+   36
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2",
+  "role": "button",
+  "name": "Continue",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   895,
+   418,
+   130,
+   44
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0",
+  "role": "label",
+  "name": "Continue",
+  "text": "Continue",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   895,
+   418,
+   66,
+   24
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   1922,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   1922,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   1922,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   40,
+   158
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   34,
+   158
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.0.0.0.0",
+  "role": "button",
+  "name": "",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   -1,
+   0,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.1",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   889,
+   0,
+   128,
+   158
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.1.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   889,
+   6,
+   128,
+   152
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.1.0.0",
+  "role": "image",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   889,
+   6,
+   128,
+   128
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.1.0.1",
+  "role": "label",
+  "name": "Disk Encryption",
+  "text": "Disk Encryption",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   889,
+   140,
+   128,
+   18
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1793,
+   0,
+   114,
+   158
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1799,
+   0,
+   108,
+   158
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1799,
+   0,
+   108,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1799,
+   0,
+   108,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0.0.0.0",
+  "role": "button",
+  "name": "Minimize",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   1799,
+   0,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0.0.0.1",
+  "role": "button",
+  "name": "Maximize",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   1836,
+   0,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0.0.0.2",
+  "role": "button",
+  "name": "Close",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   1873,
+   0,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.2",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   977,
+   1920,
+   0
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.2.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   977,
+   1920,
+   0
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.2.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   977,
+   1920,
+   0
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.1",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   0,
+   32576
+  ]
+ }
+]

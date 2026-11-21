@@ -1,0 +1,74 @@
+BOOT_IMAGE=(hd0,gpt2)/boot/ostree/default-f5f972fbf67b69bbce29c8e84939d00265ceb37c6820ac02052866c8fc756920/vmlinuz-7.3.3-200.1.utah1.fc44.x86_64 root=UUID=5bac2597-1c59-45b0-b070-cb0590d425d9 rootflags=subvol=/ rw boot=UUID=d0b77821-8334-45ba-a196-7475576f1aa4 console=tty1 console=ttyS0,115200n8 plymouth.ignore-serial-consoles rhgb quiet ostree=/ostree/boot.1/default/f5f972fbf67b69bbce29c8e84939d00265ceb37c6820ac02052866c8fc756920/0 rd.luks.uuid=2510e569-2e93-4675-b70d-23518010dba3
+
+btrfs /dev/mapper/luks-2510e569-2e93-4675-b70d-23518010dba3
+ext4 /dev/vda2 ro,relatime,seclabel
+NAME                                          FSTYPE      FSVER LABEL      UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+sr0                                                                                                                            
+zram0                                         swap        1     zram0      da105feb-fbb0-43a6-8b69-dadd00dbdff5                [SWAP]
+vda                                                                                                                            
+|-vda1                                        vfat        FAT32 EFI-SYSTEM D21C-70FA                                           
+|-vda2                                        ext4        1.0   boot       d0b77821-8334-45ba-a196-7475576f1aa4  347.2M    57% /boot
+`-vda3                                        crypto_LUKS 2     luks-root  2510e569-2e93-4675-b70d-23518010dba3                
+  `-luks-2510e569-2e93-4675-b70d-23518010dba3 btrfs             root       5bac2597-1c59-45b0-b070-cb0590d425d9   30.9G    33% /var
+                                                                                                                               /sysroot/ostree/deploy/default/var
+                                                                                                                               /sysroot
+                                                                                                                               /etc
+Enforcing
+luks-2510e569-2e93-4675-b70d-23518010dba3 UUID=2510e569-2e93-4675-b70d-23518010dba3 none discard
+active
+active
+apiVersion: org.containers.bootc/v1
+kind: BootcHost
+metadata:
+  name: host
+spec:
+  image:
+    image: ghcr.io/projectbluefin/utah:testing
+    transport: registry
+  bootOrder: default
+status:
+  staged: null
+  booted:
+    image:
+      image:
+        image: ghcr.io/projectbluefin/utah:testing
+        transport: registry
+      version: testing-20261120-81bfb04
+      timestamp: 2026-11-13T21:08:31Z
+      imageDigest: sha256:d43dafe5ed62ecaaf031c55db966d5b018927b7dfede4b7fd0b0cff484630fa1
+      architecture: amd64
+    cachedUpdate: null
+    incompatible: false
+    pinned: false
+    softRebootCapable: true
+    downloadOnly: false
+    store: ostreeContainer
+    ostree:
+      stateroot: default
+      checksum: b9d8249c2a1df9e122e84e2a53347a52f50aad8e8cd1b8c46a190cf5b0e6d617
+      deploySerial: 0
+    composefs: null
+  rollback:
+    image:
+      image:
+        image: ghcr.io/projectbluefin/utah@sha256:b062118d3aaadfa8fb4ca65aad2eba5d6d3cf94f21b57ba2f3ffb07da9dd54af
+        transport: registry
+      version: testing-20261121-b8cfc36
+      timestamp: 2026-11-13T21:08:31Z
+      imageDigest: sha256:b062118d3aaadfa8fb4ca65aad2eba5d6d3cf94f21b57ba2f3ffb07da9dd54af
+      architecture: amd64
+    cachedUpdate: null
+    incompatible: false
+    pinned: false
+    softRebootCapable: false
+    downloadOnly: false
+    store: ostreeContainer
+    ostree:
+      stateroot: default
+      checksum: a692415eec9d5599eecf50c5b02709842cb0d2b367c0ecc77bf4a71682d9378e
+      deploySerial: 0
+    composefs: null
+  rollbackQueued: false
+  type: bootcHost
+  usrOverlay: null
+  readOnly: false

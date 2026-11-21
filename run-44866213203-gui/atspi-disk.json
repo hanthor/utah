@@ -1,0 +1,1555 @@
+[
+ {
+  "path": "0.0",
+  "role": "frame",
+  "name": "",
+  "text": "",
+  "states": [
+   "active",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "win.next-page",
+   "win.previous-page",
+   "win.quit",
+   "external.manage-disks",
+   "external.error-search",
+   "window.close",
+   "external.wifi-settings",
+   "window.minimize",
+   "win.reload-page",
+   "win.show-terminal",
+   "win.about-page",
+   "window.toggle-maximized",
+   "win.advance",
+   "external.reboot",
+   "default.activate"
+  ],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "navigation.pop"
+  ],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "Disk Selection",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   977
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   170,
+   1920,
+   807
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "scroll pane",
+  "name": "",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   170,
+   1920,
+   268
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   170,
+   1920,
+   268
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   170,
+   1920,
+   268
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   220
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   220
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   220
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   220
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   220
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   220
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   220
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   220
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "list",
+  "name": "",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   164
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "list item",
+  "name": "QEMU DVD-ROM",
+  "text": "",
+  "states": [
+   "focusable",
+   "focused",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   194,
+   576,
+   55
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   684,
+   194,
+   548,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   684,
+   194,
+   46,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0",
+  "role": "label",
+  "name": "0.0 KB",
+  "text": "0.0 KB",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   684,
+   194,
+   46,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   742,
+   201,
+   468,
+   36
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0",
+  "role": "label",
+  "name": "QEMU DVD-ROM",
+  "text": "QEMU DVD-ROM",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   742,
+   201,
+   468,
+   18
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1",
+  "role": "label",
+  "name": "/dev/sr0",
+  "text": "/dev/sr0",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   742,
+   222,
+   468,
+   15
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1216,
+   194,
+   16,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0",
+  "role": "image",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1216,
+   194,
+   16,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1",
+  "role": "list item",
+  "name": "VirtIO Disk",
+  "text": "",
+  "states": [
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   249,
+   576,
+   55
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   684,
+   249,
+   548,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   684,
+   249,
+   45,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0",
+  "role": "label",
+  "name": "26 GB",
+  "text": "26 GB",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   684,
+   249,
+   45,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.1",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   741,
+   256,
+   290,
+   36
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.1.0",
+  "role": "label",
+  "name": "VirtIO Disk",
+  "text": "VirtIO Disk",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   741,
+   256,
+   290,
+   18
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.1.1",
+  "role": "label",
+  "name": "/dev/vda",
+  "text": "/dev/vda",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   741,
+   277,
+   290,
+   15
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.2",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1037,
+   249,
+   195,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.2.0",
+  "role": "label",
+  "name": "Not enough space for installation (32 GB required)",
+  "text": "Not enough space for installation (32 GB required)",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1037,
+   249,
+   195,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2",
+  "role": "list item",
+  "name": "VirtIO Disk",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   672,
+   304,
+   576,
+   54
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   684,
+   304,
+   548,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   684,
+   304,
+   45,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.0",
+  "role": "label",
+  "name": "52 GB",
+  "text": "52 GB",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   684,
+   304,
+   45,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.1",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   741,
+   311,
+   469,
+   36
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.1.0",
+  "role": "label",
+  "name": "VirtIO Disk",
+  "text": "VirtIO Disk",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   741,
+   311,
+   469,
+   18
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.1.1",
+  "role": "label",
+  "name": "/dev/vdb",
+  "text": "/dev/vdb",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   741,
+   332,
+   469,
+   15
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.2",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1216,
+   304,
+   16,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.2.0",
+  "role": "image",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1216,
+   304,
+   16,
+   50
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1",
+  "role": "button",
+  "name": "Manage Disks",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   877,
+   370,
+   165,
+   44
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0",
+  "role": "label",
+  "name": "Manage Disks",
+  "text": "Manage Disks",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   877,
+   370,
+   101,
+   24
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   0,
+   32576
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   1920,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   1922,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   1922,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   1922,
+   170
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   40,
+   158
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   34,
+   158
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.0.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   -1,
+   0,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.0.0.0.0",
+  "role": "button",
+  "name": "",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   -1,
+   0,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.1",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   889,
+   0,
+   128,
+   158
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.1.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   889,
+   6,
+   128,
+   152
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.1.0.0",
+  "role": "image",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   889,
+   6,
+   128,
+   128
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.1.0.1",
+  "role": "label",
+  "name": "Disk Selection",
+  "text": "Disk Selection",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "clipboard.copy",
+   "selection.delete",
+   "clipboard.paste",
+   "link.open",
+   "clipboard.cut",
+   "link.copy",
+   "menu.popup",
+   "selection.select-all"
+  ],
+  "ext": [
+   889,
+   140,
+   128,
+   18
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1753,
+   0,
+   154,
+   158
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1759,
+   0,
+   148,
+   158
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1759,
+   0,
+   148,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0.0.0",
+  "role": "button",
+  "name": "",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   1759,
+   0,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0.0.1",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   1799,
+   0,
+   108,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0.0.1.0",
+  "role": "button",
+  "name": "Minimize",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   1799,
+   0,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0.0.1.1",
+  "role": "button",
+  "name": "Maximize",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   1836,
+   0,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.2.0.0.1.2",
+  "role": "button",
+  "name": "Close",
+  "text": "",
+  "states": [
+   "focusable",
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [
+   "click"
+  ],
+  "ext": [
+   1873,
+   0,
+   34,
+   34
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.2",
+  "role": "grouping",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   977,
+   1920,
+   0
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.2.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   977,
+   1920,
+   0
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.0.0.0.0.0.0.2.0.0",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   977,
+   1920,
+   0
+  ]
+ },
+ {
+  "path": "0.0.0.0.0.0.1",
+  "role": "panel",
+  "name": "",
+  "text": "",
+  "states": [
+   "sensitive",
+   "showing",
+   "visible"
+  ],
+  "actions": [],
+  "ext": [
+   0,
+   0,
+   0,
+   32576
+  ]
+ }
+]

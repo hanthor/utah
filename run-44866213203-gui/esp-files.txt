@@ -1,0 +1,10 @@
+/EFI/BOOT/BOOTX64.EFI
+/EFI/BOOT/fbx64.efi
+/EFI/BOOT/grubx64.efi
+/EFI/fedora/BOOTX64.CSV
+/EFI/fedora/bootuuid.cfg
+/EFI/fedora/grub.cfg
+/EFI/fedora/grubx64.efi
+/EFI/fedora/mmx64.efi
+/EFI/fedora/shim.efi
+/EFI/fedora/shimx64.efi

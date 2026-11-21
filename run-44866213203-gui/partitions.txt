@@ -1,0 +1,12 @@
+label: gpt
+label-id: A5D3D20E-80F6-4EE7-BF22-FDA33AE38539
+device: /dev/loop2
+unit: sectors
+first-lba: 2048
+last-lba: 50331614
+sector-size: 512
+
+/dev/loop2p1 : start=        2048, size=        2048, type=21686148-6449-6E6F-744E-656564454649, uuid=4EFB2D20-1B30-4127-A6A7-89E84F5AF1C8, name="BIOS-BOOT"
+/dev/loop2p2 : start=        4096, size=     1048576, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, uuid=8F43E5D5-E2AB-4B15-AD83-C1F9B0216769, name="EFI-SYSTEM"
+/dev/loop2p3 : start=     1052672, size=     2097152, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=04B7D5DC-F697-4481-A258-377F37D216DC, name="boot"
+/dev/loop2p4 : start=     3149824, size=    47179776, type=4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709, uuid=B300F8F8-86C1-4A5A-8C52-A2A0E102B377, name="root"

@@ -1,0 +1,2 @@
+UUID=b545de0d-1188-4135-9174-964ab4be6e49 /boot auto ro 0 0
+machine-id: ''

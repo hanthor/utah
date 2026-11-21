@@ -1,0 +1,13 @@
+[luks-unlock] qemu mode — watching monitor /mnt/spike/e2e/installed-monitor.sock...
+[luks-unlock] screendump brightness=0.84 hash=aff8fa01
+[luks-unlock] VM is rendering (brightness 0.84)
+[luks-unlock] screendump brightness=0.84 hash=aff8fa01
+[luks-unlock] screendump brightness=0.84 hash=aff8fa01
+[luks-unlock] Plymouth prompt stable (brightness=0.84, 2 identical polls)
+[luks-unlock] Waiting 10s for Plymouth to settle...
+[luks-unlock] Sending passphrase via QEMU monitor sendkey...
+[luks-unlock] Passphrase sent — watching for boot...
+[luks-unlock] post-passphrase brightness=1.22 hash=9efdb591
+[luks-unlock] Screen changed after passphrase — LUKS accepted, boot proceeding
+[luks-unlock] post-passphrase brightness=1.22 hash=de27325d
+[luks-unlock] RESULT: boot succeeded (sshd banner on port 2241)

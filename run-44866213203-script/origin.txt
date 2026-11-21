@@ -1,0 +1,2 @@
+[origin]
+container-image-reference=ostree-unverified-registry:ghcr.io/projectbluefin/utah:testing
