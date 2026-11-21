@@ -26,9 +26,10 @@
 #                            deployment, so it survives `bootc switch`
 #   UTAH_RAW_EVIDENCE        directory for partition table, entries and sizes
 #   UTAH_RAW_BTRFS_COMPRESS  mount the root with compress-force=<value> (e.g.
-#                            zstd:3) while bootc writes it, so the medium (and
-#                            the block copy of it) holds compressed extents;
-#                            empty (default) writes uncompressed
+#                            zstd:3) while bootc writes it, then rewrite every
+#                            file compressed with that algorithm, so the medium
+#                            (and the block copy of it) holds compressed
+#                            extents; empty (default) writes uncompressed
 set -euo pipefail
 
 IMAGE="${1:?image ref is required}"
@@ -96,6 +97,14 @@ podman run --rm --privileged --pid=host "${volumes[@]}" \
         mkdir /target/boot/efi
         mount "${LOOP}p2" /target/boot/efi
         bootc install to-filesystem "$@" /target
+        umount -R /target/boot
+        # ostree fallocates each object file before writing it, and btrfs
+        # never compresses writes into preallocated extents, so the mount
+        # option alone left run 44884511244 at 6.54 GB used, the same as
+        # uncompressed. Rewriting the files compresses them: 6.19 GB to
+        # 3.08 GB in 3 minutes locally. Defrag compresses at the algorithm
+        # default level (zstd: 3) on kernels before 6.15, which reject -L.
+        [[ -z "${COMPRESS}" ]] || btrfs filesystem defragment -r -c"${COMPRESS%%:*}" /target
         umount -R /target
     ' bash "${install_args[@]}"
 install_seconds=$(( $(date +%s) - start ))

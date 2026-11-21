@@ -142,6 +142,14 @@ class ShrinkPlanTests(unittest.TestCase):
         self.assertLess(sysfs, shrink.index("btrfs balance start"))
         self.assertLess(shrink.index("btrfs balance start"), shrink.rindex("btrfs filesystem resize"))
 
+    def test_compression_rewrites_the_files_bootc_wrote(self):
+        # ostree fallocates its objects; btrfs does not compress writes into
+        # preallocated extents, so compress-force alone changed nothing.
+        build = (RAW / "build-raw-image.sh").read_text()
+        defrag = build.index('btrfs filesystem defragment -r -c"${COMPRESS%%:*}" /target')
+        self.assertLess(build.index("bootc install to-filesystem"), defrag)
+        self.assertLess(build.index("umount -R /target/boot"), defrag)
+
 
 class ResultsTests(unittest.TestCase):
     def test_stages_pass_fail_and_not_run(self):

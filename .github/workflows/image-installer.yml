@@ -38,7 +38,7 @@ on:
         options: [gui, script]
         default: gui
       btrfs_compress:
-        description: Build the medium's btrfs root with compress-force=<value> (e.g. zstd:3); empty = off
+        description: Compress the medium's btrfs root (compress-force=<value> while bootc writes, then defragment -c<algorithm>; e.g. zstd:3); empty = off
         type: string
         default: ''
       formats:
