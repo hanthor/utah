@@ -1,0 +1,4 @@
+apparent: 24G
+allocated: 6.6G
+zstd -3 compressed: 2.87 GiB
+compression took 14s

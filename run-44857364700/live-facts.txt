@@ -1,0 +1,15 @@
+BOOT_IMAGE=(hd0,gpt3)/boot/ostree/default-f5f972fbf67b69bbce29c8e84939d00265ceb37c6820ac02052866c8fc756920/vmlinuz-7.3.3-200.1.utah1.fc44.x86_64 root=UUID=6bdb8bf9-8bc2-4f8c-8df6-794ccdc22993 console=tty1 console=ttyS0,115200n8 plymouth.ignore-serial-consoles ostree=/ostree/boot.1/default/f5f972fbf67b69bbce29c8e84939d00265ceb37c6820ac02052866c8fc756920/0 ro utah.live utah.live.debug systemd.journald.forward_to_console=1 plymouth.enable=0 rd.plymouth=0
+
+overlay overlay ro,relatime,seclabel,lowerdir=/sysroot,upperdir=/run/systemd/overlay-sysroot/upper,workdir=/run/systemd/overlay-sysroot/work,uuid=on
+overlay ro,relatime,seclabel,lowerdir+=/run/ostree/.private/cfsroot-lower,datadir+=/sysroot/ostree/repo/objects,redirect_dir=on,metacopy=on
+Enforcing
+NAME    SIZE RO TYPE FSTYPE LABEL      PARTLABEL  MOUNTPOINTS
+loop0  20.9M  1 loop erofs                        
+sr0    1024M  1 rom                               
+zram0   5.8G  0 disk swap   zram0                 [SWAP]
+vda      24G  1 disk                              
+├─vda1    1M  1 part                   BIOS-BOOT  
+├─vda2  512M  1 part vfat   EFI-SYSTEM EFI-SYSTEM /efi
+└─vda3 23.5G  1 part btrfs  root       root       
+vdb      48G  0 disk                              
+● bootc-generic-growpart.service loaded failed failed Bootc Fallback Root Filesystem Grow

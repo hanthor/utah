@@ -1,0 +1,1 @@
+bootc install to-disk took 148s
