@@ -129,6 +129,10 @@ EXTENSIONS = ("gsconnect@andyholmes.github.io",)
 # ("Set", " '<false>'").
 OVERVIEW_ACTIVE = ("gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell "
                    "--method org.freedesktop.DBus.Properties.{} org.gnome.Shell OverviewActive{}")
+# patches/dash-to-dock's module flag: an image without it predates the
+# startup-overview fix, so check_no_startup_overview does not enforce there.
+DOCK_JS = "/usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com/docking.js"
+DOCK_PATCH_MARKER = "startupOverviewHandled"
 # GRUB's menu on the medium: its help text and the live entry
 # (medium.LIVE_TITLE), as tesseract reads them, so a kernel console line
 # naming a "Utah live" unit is no menu. shim's fallback (fbx64.efi) screen
@@ -1823,7 +1827,15 @@ class Harness:
         """GNOME starts on the desktop, not in the Activities overview: common sets
         dash-to-dock's disable-overview-on-startup and patches/dash-to-dock makes it hold
         when the dock is enabled after startup. The dock may close the overview a few
-        seconds into the session, so poll for 20 s before failing."""
+        seconds into the session, so poll for 20 s before failing.
+
+        Enforced only on an image that carries the patch: a pull request installs the
+        published :testing digest, which predates it (run 46051888847 failed every leg on
+        the unpatched f73afe48), while Post-Testing E2E installs the candidate."""
+        if DOCK_PATCH_MARKER not in runner(f"grep -o {DOCK_PATCH_MARKER} {DOCK_JS} || true"):
+            self.results.check(phase, "startup overview", [])
+            log(f"  {phase}: startup overview: not checked, the image predates patches/dash-to-dock")
+            return
         end = time.time() + 20
         while True:
             try:

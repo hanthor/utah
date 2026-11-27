@@ -72,7 +72,11 @@ with `git apply` before `make`, so a submodule bump it no longer fits fails the
 build; `test_dash_to_dock_patches_apply_to_the_pinned_submodule` catches that
 first. The image-installer E2E reads `OverviewActive` at the live login and at
 each installed login (`check_no_startup_overview`, 20 s) and fails while it is
-`true`.
+`true`, but only on an image whose `docking.js` carries the patch
+(`startupOverviewHandled`). A pull request installs the published `:testing`
+digest, so it cannot prove a fix in the image itself: run 46051888847 failed
+all three legs on the unpatched digest. Post-Testing E2E installs the
+candidate and enforces it there.
 
 ## Checking an image or a machine
 
